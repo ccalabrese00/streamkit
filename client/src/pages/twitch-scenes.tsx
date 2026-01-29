@@ -27,6 +27,7 @@ import {
   Wand2,
   Loader2,
   Layers,
+  Plus,
 } from "lucide-react";
 import { Link } from "wouter";
 import {
@@ -37,31 +38,53 @@ import {
 } from "@/lib/twitchSceneConfig";
 import { loadPresets, makeId, savePresets, type ScenePreset } from "@/lib/twitchPresets";
 
-const scenes = [
+interface SceneType {
+  id: string;
+  label: string;
+  title: string;
+  subtitle: string;
+  accent: Accent;
+  isCustom?: boolean;
+}
+
+const defaultScenes: SceneType[] = [
   {
-    id: "opening" as const,
+    id: "opening",
     label: "Starting Soon",
     title: "Starting Soon",
     subtitle: "Grab a drink — we’re going live in a moment.",
-    accent: "purple" as const,
+    accent: "purple",
   },
   {
-    id: "brb" as const,
+    id: "brb",
     label: "Be Right Back",
     title: "Be Right Back",
     subtitle: "Quick break. Don’t go anywhere.",
-    accent: "cyan" as const,
+    accent: "cyan",
   },
   {
-    id: "ending" as const,
+    id: "ending",
     label: "Stream Ending",
     title: "See You Soon",
     subtitle: "Thanks for hanging out — catch you next time.",
-    accent: "pink" as const,
+    accent: "pink",
   },
 ];
 
-type SceneId = (typeof scenes)[number]["id"];
+const CUSTOM_SCENES_KEY = "twitch_custom_scenes";
+
+function loadCustomScenes(): SceneType[] {
+  try {
+    const data = localStorage.getItem(CUSTOM_SCENES_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomScenes(list: SceneType[]): void {
+  localStorage.setItem(CUSTOM_SCENES_KEY, JSON.stringify(list));
+}
 
 function useNowTime() {
   const [t, setT] = useState(() => new Date());
@@ -94,7 +117,7 @@ function accentDotClass(accent: Accent) {
   }
 }
 
-function buildSceneUrl(sceneId: SceneId, cfg: SceneConfig) {
+function buildSceneUrl(sceneId: string, cfg: SceneConfig) {
   const qs = encodeConfigToQuery(cfg);
   return `/scene/${sceneId}?${qs}`;
 }
@@ -103,8 +126,8 @@ async function copyText(text: string) {
   await navigator.clipboard.writeText(text);
 }
 
-function SceneCanvas({ sceneId, cfg }: { sceneId: SceneId; cfg: SceneConfig }) {
-  const scene = scenes.find((s) => s.id === sceneId)!;
+function SceneCanvas({ sceneId, cfg, allScenes }: { sceneId: string; cfg: SceneConfig; allScenes: SceneType[] }) {
+  const scene = allScenes.find((s) => s.id === sceneId) || allScenes[0];
   const time = useNowTime();
 
   const tickerText = useMemo(() => {
@@ -329,7 +352,9 @@ function SceneCanvas({ sceneId, cfg }: { sceneId: SceneId; cfg: SceneConfig }) {
 }
 
 export default function TwitchScenes() {
-  const [sceneId, setSceneId] = useState<SceneId>("opening");
+  const [sceneId, setSceneId] = useState<string>("opening");
+  const [customScenes, setCustomScenes] = useState<SceneType[]>([]);
+  const allScenes = [...defaultScenes, ...customScenes];
   const [playing, setPlaying] = useState(true);
   const [cfg, setCfg] = useState<SceneConfig>(defaultSceneConfig);
   const [copied, setCopied] = useState(false);
@@ -344,11 +369,44 @@ export default function TwitchScenes() {
 
   useEffect(() => {
     setPresets(loadPresets());
+    setCustomScenes(loadCustomScenes());
   }, []);
 
   useEffect(() => {
     savePresets(presets);
   }, [presets]);
+
+  useEffect(() => {
+    saveCustomScenes(customScenes);
+  }, [customScenes]);
+
+  function addCustomScene() {
+    const newScene: SceneType = {
+      id: `custom-${Date.now()}`,
+      label: "New Scene",
+      title: "Custom Scene",
+      subtitle: "Your message here",
+      accent: cfg.accent,
+      isCustom: true,
+    };
+    setCustomScenes((prev) => [...prev, newScene]);
+    setSceneId(newScene.id);
+    toast({ title: "Scene added" });
+  }
+
+  function deleteCustomScene(id: string) {
+    setCustomScenes((prev) => prev.filter((s) => s.id !== id));
+    if (sceneId === id) {
+      setSceneId("opening");
+    }
+    toast({ title: "Scene deleted" });
+  }
+
+  function updateCustomScene(id: string, updates: Partial<SceneType>) {
+    setCustomScenes((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+    );
+  }
 
   const sceneUrl = buildSceneUrl(sceneId, cfg);
 
@@ -481,32 +539,61 @@ export default function TwitchScenes() {
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div className="glass rounded-3xl p-4">
-              <div
-                className="text-sm font-semibold tracking-tight text-white/90"
-                data-testid="text-scenes-title"
-              >
-                Scenes
+              <div className="flex items-center justify-between">
+                <div
+                  className="text-sm font-semibold tracking-tight text-white/90"
+                  data-testid="text-scenes-title"
+                >
+                  Scenes
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={addCustomScene}
+                  data-testid="button-add-scene"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
               <div className="mt-4 grid gap-2">
-                {scenes.map((s) => {
+                {allScenes.map((s) => {
                   const active = s.id === sceneId;
                   return (
-                    <button
+                    <div
                       key={s.id}
-                      onClick={() => setSceneId(s.id)}
                       className={cn(
-                        "group flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition",
+                        "group flex w-full items-center justify-between rounded-2xl px-4 py-3 transition",
                         "border border-white/10 bg-white/5 hover:bg-white/7",
                         active && "bg-white/10"
                       )}
-                      data-testid={`button-scene-${s.id}`}
                     >
-                      <div>
+                      <button
+                        onClick={() => setSceneId(s.id)}
+                        className="flex-1 text-left"
+                        data-testid={`button-scene-${s.id}`}
+                      >
                         <div className="text-sm font-semibold text-white/90">{s.label}</div>
                         <div className="mt-0.5 font-mono text-xs text-white/55">1920×1080</div>
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <div className={cn("h-2.5 w-2.5 rounded-full", accentDotClass(s.accent))} />
+                        {s.isCustom && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-red-400"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteCustomScene(s.id);
+                            }}
+                            data-testid={`button-delete-scene-${s.id}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
-                      <div className={cn("h-2.5 w-2.5 rounded-full", accentDotClass(cfg.accent))} />
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -912,7 +999,7 @@ export default function TwitchScenes() {
             )}
             data-testid="wrap-preview"
           >
-            <SceneCanvas sceneId={sceneId} cfg={cfg} />
+            <SceneCanvas sceneId={sceneId} cfg={cfg} allScenes={allScenes} />
           </div>
         </div>
 
