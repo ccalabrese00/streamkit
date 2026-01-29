@@ -2,7 +2,23 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Monitor, Play, Square, Sparkles } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Monitor, Play, Square, Sparkles, Copy, ExternalLink } from "lucide-react";
+import {
+  defaultSceneConfig,
+  encodeConfigToQuery,
+  type Accent,
+  type SceneConfig,
+} from "@/lib/twitchSceneConfig";
 
 const scenes = [
   {
@@ -43,21 +59,48 @@ function formatTime(d: Date) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function SceneCanvas({ sceneId }: { sceneId: SceneId }) {
+function accentDotClass(accent: Accent) {
+  switch (accent) {
+    case "cyan":
+      return "bg-cyan-300";
+    case "pink":
+      return "bg-pink-300";
+    case "lime":
+      return "bg-lime-300";
+    case "amber":
+      return "bg-amber-300";
+    case "red":
+      return "bg-red-300";
+    case "purple":
+    default:
+      return "bg-violet-400";
+  }
+}
+
+function buildSceneUrl(sceneId: SceneId, cfg: SceneConfig) {
+  const qs = encodeConfigToQuery(cfg);
+  return `/scene/${sceneId}?${qs}`;
+}
+
+async function copyText(text: string) {
+  await navigator.clipboard.writeText(text);
+}
+
+function SceneCanvas({ sceneId, cfg }: { sceneId: SceneId; cfg: SceneConfig }) {
   const scene = scenes.find((s) => s.id === sceneId)!;
   const time = useNowTime();
 
   const tickerText = useMemo(() => {
     const base = [
-      "FOLLOW •",
-      "SUBSCRIBE •",
+      `${cfg.labelLeft} •`,
+      `${cfg.labelRight} •`,
       "CHAT: !discord •",
       "NEW VODS •",
       "THANKS FOR SUPPORT •",
       "BE KIND •",
     ].join(" ");
     return `${base} ${base} ${base}`;
-  }, []);
+  }, [cfg.labelLeft, cfg.labelRight]);
 
   return (
     <div
@@ -73,29 +116,17 @@ function SceneCanvas({ sceneId }: { sceneId: SceneId }) {
 
       <motion.div
         className="pointer-events-none absolute -left-24 -top-24 h-[420px] w-[420px] rounded-full bg-fuchsia-500/20 blur-3xl"
-        animate={{
-          x: [0, 28, 0],
-          y: [0, 18, 0],
-          opacity: [0.55, 0.7, 0.55],
-        }}
+        animate={{ x: [0, 28, 0], y: [0, 18, 0], opacity: [0.55, 0.7, 0.55] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="pointer-events-none absolute -right-28 -top-16 h-[460px] w-[460px] rounded-full bg-cyan-400/18 blur-3xl"
-        animate={{
-          x: [0, -26, 0],
-          y: [0, 22, 0],
-          opacity: [0.45, 0.6, 0.45],
-        }}
+        animate={{ x: [0, -26, 0], y: [0, 22, 0], opacity: [0.45, 0.6, 0.45] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="pointer-events-none absolute left-1/3 top-[58%] h-[520px] w-[520px] rounded-full bg-pink-500/12 blur-3xl"
-        animate={{
-          x: [0, 18, 0],
-          y: [0, -20, 0],
-          opacity: [0.35, 0.48, 0.35],
-        }}
+        animate={{ x: [0, 18, 0], y: [0, -20, 0], opacity: [0.35, 0.48, 0.35] }}
         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
       />
 
@@ -116,32 +147,23 @@ function SceneCanvas({ sceneId }: { sceneId: SceneId }) {
                 className="text-sm font-medium tracking-tight text-white/90"
                 data-testid="text-channel"
               >
-                Your Channel
+                {cfg.channel}
               </div>
-              <div
-                className="font-mono text-xs text-white/60"
-                data-testid="text-time"
-              >
-                {formatTime(time)}
-              </div>
+              {cfg.showTime ? (
+                <div className="font-mono text-xs text-white/60" data-testid="text-time">
+                  {formatTime(time)}
+                </div>
+              ) : (
+                <div className="font-mono text-xs text-white/60" data-testid="text-time">
+                  
+                </div>
+              )}
             </div>
           </div>
 
-          <div
-            className="scene-badge rounded-full px-4 py-2"
-            data-testid="pill-scene"
-          >
+          <div className="scene-badge rounded-full px-4 py-2" data-testid="pill-scene">
             <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  "inline-block h-1.5 w-1.5 rounded-full",
-                  scene.accent === "purple"
-                    ? "bg-violet-400"
-                    : scene.accent === "cyan"
-                      ? "bg-cyan-300"
-                      : "bg-pink-300"
-                )}
-              />
+              <span className={cn("inline-block h-1.5 w-1.5 rounded-full", accentDotClass(cfg.accent))} />
               <span className="text-xs font-medium tracking-wide text-white/80">
                 {scene.label.toUpperCase()}
               </span>
@@ -185,24 +207,21 @@ function SceneCanvas({ sceneId }: { sceneId: SceneId }) {
                 <div className="h-2 w-2 rounded-full bg-emerald-400/90" />
                 <span className="text-sm font-medium text-white/85">Now Playing</span>
                 <span className="mx-2 h-4 w-px bg-white/12" />
-                <span className="font-mono text-xs text-white/60">Lo-fi • chill set</span>
+                <span className="font-mono text-xs text-white/60">{cfg.nowPlaying}</span>
               </div>
 
               <div
                 className="glass inline-flex items-center gap-2 rounded-2xl px-4 py-3"
                 data-testid="card-social"
               >
-                <span className="text-sm font-medium text-white/85">@yourhandle</span>
+                <span className="text-sm font-medium text-white/85">{cfg.handle}</span>
                 <span className="font-mono text-xs text-white/60">• socials in chat</span>
               </div>
             </div>
           </div>
 
           <div className="grid gap-4">
-            <div
-              className="glass floaty rounded-3xl p-5"
-              data-testid="panel-chat"
-            >
+            <div className="glass floaty rounded-3xl p-5" data-testid="panel-chat">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold tracking-tight text-white/90">Chat</div>
                 <div className="font-mono text-xs text-white/55">LIVE</div>
@@ -226,28 +245,23 @@ function SceneCanvas({ sceneId }: { sceneId: SceneId }) {
               </div>
             </div>
 
-            <div
-              className="glass floaty-2 rounded-3xl p-5"
-              data-testid="panel-stats"
-            >
+            <div className="glass floaty-2 rounded-3xl p-5" data-testid="panel-stats">
               <div className="text-sm font-semibold tracking-tight text-white/90">Stream Stats</div>
               <div className="mt-4 grid grid-cols-3 gap-3">
-                {
-                  [
-                    { k: "Viewers", v: "128" },
-                    { k: "Subs", v: "12" },
-                    { k: "Hype", v: "99" },
-                  ].map((s, i) => (
-                    <div
-                      key={s.k}
-                      className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3"
-                      data-testid={`card-stat-${i}`}
-                    >
-                      <div className="font-mono text-[11px] text-white/55">{s.k}</div>
-                      <div className="mt-1 text-lg font-semibold text-white/90">{s.v}</div>
-                    </div>
-                  ))
-                }
+                {[
+                  { k: "Viewers", v: "128" },
+                  { k: "Subs", v: "12" },
+                  { k: "Hype", v: "99" },
+                ].map((s, i) => (
+                  <div
+                    key={s.k}
+                    className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3"
+                    data-testid={`card-stat-${i}`}
+                  >
+                    <div className="font-mono text-[11px] text-white/55">{s.k}</div>
+                    <div className="mt-1 text-lg font-semibold text-white/90">{s.v}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -289,6 +303,10 @@ function SceneCanvas({ sceneId }: { sceneId: SceneId }) {
 export default function TwitchScenes() {
   const [sceneId, setSceneId] = useState<SceneId>("opening");
   const [playing, setPlaying] = useState(true);
+  const [cfg, setCfg] = useState<SceneConfig>(defaultSceneConfig);
+  const [copied, setCopied] = useState(false);
+
+  const sceneUrl = buildSceneUrl(sceneId, cfg);
 
   return (
     <div className="min-h-screen bg-background">
@@ -312,7 +330,7 @@ export default function TwitchScenes() {
               className="mt-3 max-w-[66ch] text-pretty text-sm text-white/65 md:text-base"
               data-testid="text-description"
             >
-              Pick a scene and use it as a full-screen overlay in OBS. Everything animates: glow, floating panels, and the ticker.
+              Customize your channel name, handle, ticker words, and accent color — then copy your OBS-ready link.
             </p>
           </div>
 
@@ -339,88 +357,244 @@ export default function TwitchScenes() {
         </header>
 
         <div className="mt-8 grid gap-6 md:grid-cols-[360px_1fr]">
-          <div className="glass rounded-3xl p-4">
-            <div
-              className="text-sm font-semibold tracking-tight text-white/90"
-              data-testid="text-scenes-title"
-            >
-              Scenes
-            </div>
-            <div className="mt-4 grid gap-2">
-              {scenes.map((s) => {
-                const active = s.id === sceneId;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => setSceneId(s.id)}
-                    className={cn(
-                      "group flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition",
-                      "border border-white/10 bg-white/5 hover:bg-white/7",
-                      active && "bg-white/10"
-                    )}
-                    data-testid={`button-scene-${s.id}`}
-                  >
-                    <div>
-                      <div className="text-sm font-semibold text-white/90">{s.label}</div>
-                      <div className="mt-0.5 font-mono text-xs text-white/55">
-                        1920×1080 • loop
-                      </div>
-                    </div>
-                    <div
+          <div className="grid gap-6">
+            <div className="glass rounded-3xl p-4">
+              <div
+                className="text-sm font-semibold tracking-tight text-white/90"
+                data-testid="text-scenes-title"
+              >
+                Scenes
+              </div>
+              <div className="mt-4 grid gap-2">
+                {scenes.map((s) => {
+                  const active = s.id === sceneId;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setSceneId(s.id)}
                       className={cn(
-                        "h-2.5 w-2.5 rounded-full",
-                        s.accent === "purple"
-                          ? "bg-violet-400"
-                          : s.accent === "cyan"
-                            ? "bg-cyan-300"
-                            : "bg-pink-300"
+                        "group flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition",
+                        "border border-white/10 bg-white/5 hover:bg-white/7",
+                        active && "bg-white/10"
                       )}
-                    />
-                  </button>
-                );
-              })}
+                      data-testid={`button-scene-${s.id}`}
+                    >
+                      <div>
+                        <div className="text-sm font-semibold text-white/90">{s.label}</div>
+                        <div className="mt-0.5 font-mono text-xs text-white/55">1920×1080 • loop</div>
+                      </div>
+                      <div className={cn("h-2.5 w-2.5 rounded-full", accentDotClass(cfg.accent))} />
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
+                <div className="text-xs font-medium text-white/75" data-testid="text-tip-title">
+                  Tip
+                </div>
+                <div className="mt-2 text-sm text-white/65" data-testid="text-tip">
+                  In OBS: add a Browser Source → set Width 1920, Height 1080 → paste the link below.
+                </div>
+              </div>
             </div>
 
-            <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
-              <div className="text-xs font-medium text-white/75" data-testid="text-tip-title">
-                Tip
+            <div className="glass rounded-3xl p-4" data-testid="panel-customize">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold tracking-tight text-white/90" data-testid="text-customize-title">
+                  Customize
+                </div>
+                <Button
+                  variant="secondary"
+                  className="gap-2"
+                  onClick={() => setCfg(defaultSceneConfig)}
+                  data-testid="button-reset"
+                >
+                  Reset
+                </Button>
               </div>
-              <div
-                className="mt-2 text-sm text-white/65"
-                data-testid="text-tip"
-              >
-                In OBS: add a Browser Source → set Width 1920, Height 1080 → use the full-screen preview.
+
+              <div className="mt-4 grid gap-4">
+                <div className="grid gap-2">
+                  <Label className="text-white/80" htmlFor="channel" data-testid="label-channel">
+                    Channel name
+                  </Label>
+                  <Input
+                    id="channel"
+                    value={cfg.channel}
+                    onChange={(e) => setCfg((p) => ({ ...p, channel: e.target.value }))}
+                    className="bg-white/5 text-white/90"
+                    data-testid="input-channel"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="text-white/80" htmlFor="handle" data-testid="label-handle">
+                    Social handle
+                  </Label>
+                  <Input
+                    id="handle"
+                    value={cfg.handle}
+                    onChange={(e) => setCfg((p) => ({ ...p, handle: e.target.value }))}
+                    className="bg-white/5 text-white/90"
+                    data-testid="input-handle"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="text-white/80" htmlFor="nowPlaying" data-testid="label-nowplaying">
+                    Now playing
+                  </Label>
+                  <Input
+                    id="nowPlaying"
+                    value={cfg.nowPlaying}
+                    onChange={(e) => setCfg((p) => ({ ...p, nowPlaying: e.target.value }))}
+                    className="bg-white/5 text-white/90"
+                    data-testid="input-nowplaying"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-2">
+                    <Label className="text-white/80" htmlFor="labelLeft" data-testid="label-ticker-left">
+                      Ticker word 1
+                    </Label>
+                    <Input
+                      id="labelLeft"
+                      value={cfg.labelLeft}
+                      onChange={(e) => setCfg((p) => ({ ...p, labelLeft: e.target.value }))}
+                      className="bg-white/5 text-white/90"
+                      data-testid="input-ticker-left"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-white/80" htmlFor="labelRight" data-testid="label-ticker-right">
+                      Ticker word 2
+                    </Label>
+                    <Input
+                      id="labelRight"
+                      value={cfg.labelRight}
+                      onChange={(e) => setCfg((p) => ({ ...p, labelRight: e.target.value }))}
+                      className="bg-white/5 text-white/90"
+                      data-testid="input-ticker-right"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label className="text-white/80" data-testid="label-accent">
+                    Accent color
+                  </Label>
+                  <Select
+                    value={cfg.accent}
+                    onValueChange={(v) => setCfg((p) => ({ ...p, accent: v as Accent }))}
+                  >
+                    <SelectTrigger
+                      className="bg-white/5 text-white/90"
+                      data-testid="select-accent"
+                    >
+                      <SelectValue placeholder="Pick a color" />
+                    </SelectTrigger>
+                    <SelectContent data-testid="select-accent-content">
+                      <SelectItem value="purple" data-testid="option-accent-purple">
+                        Purple
+                      </SelectItem>
+                      <SelectItem value="cyan" data-testid="option-accent-cyan">
+                        Cyan
+                      </SelectItem>
+                      <SelectItem value="pink" data-testid="option-accent-pink">
+                        Pink
+                      </SelectItem>
+                      <SelectItem value="lime" data-testid="option-accent-lime">
+                        Lime
+                      </SelectItem>
+                      <SelectItem value="amber" data-testid="option-accent-amber">
+                        Amber
+                      </SelectItem>
+                      <SelectItem value="red" data-testid="option-accent-red">
+                        Red
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <div>
+                    <div className="text-sm font-semibold text-white/90" data-testid="text-toggle-time-title">
+                      Show time
+                    </div>
+                    <div className="mt-0.5 text-xs text-white/60" data-testid="text-toggle-time-desc">
+                      Turn off if you don’t want a clock in your overlay.
+                    </div>
+                  </div>
+                  <Switch
+                    checked={cfg.showTime}
+                    onCheckedChange={(v) => setCfg((p) => ({ ...p, showTime: v }))}
+                    data-testid="switch-showtime"
+                  />
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                  <div className="text-xs font-medium text-white/75" data-testid="text-link-title">
+                    OBS link
+                  </div>
+                  <div className="mt-2 flex items-start gap-2">
+                    <div
+                      className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-[12px] text-white/75"
+                      data-testid="text-obs-link"
+                    >
+                      {sceneUrl}
+                    </div>
+                    <Button
+                      variant="secondary"
+                      className="gap-2"
+                      onClick={async () => {
+                        await copyText(window.location.origin + sceneUrl);
+                        setCopied(true);
+                        window.setTimeout(() => setCopied(false), 1200);
+                      }}
+                      data-testid="button-copy-link"
+                    >
+                      <Copy className="h-4 w-4" />
+                      {copied ? "Copied" : "Copy"}
+                    </Button>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <a
+                      href={sceneUrl}
+                      className="inline-flex items-center gap-2 text-sm font-medium text-white/70 underline decoration-white/20 underline-offset-4 hover:text-white"
+                      data-testid="link-open-fullscreen"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Open full-screen
+                    </a>
+                    <div className="text-xs text-white/45" data-testid="text-link-hint">
+                      Anyone with this link gets your settings.
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between">
-              <div
-                className="text-sm font-semibold text-white/90"
-                data-testid="text-preview-title"
-              >
+              <div className="text-sm font-semibold text-white/90" data-testid="text-preview-title">
                 Preview
               </div>
-              <a
-                href={`/scene/${sceneId}`}
-                className="text-sm font-medium text-white/70 underline decoration-white/20 underline-offset-4 hover:text-white"
-                data-testid="link-fullscreen"
-              >
-                Open full-screen
-              </a>
             </div>
 
-            <div className={cn("mt-3", !playing && "[&_*]:!animate-none")}
+            <div
+              className={cn("mt-3", !playing && "[&_*]:!animate-none")}
               data-testid="wrap-preview"
             >
-              <SceneCanvas sceneId={sceneId} />
+              <SceneCanvas sceneId={sceneId} cfg={cfg} />
             </div>
           </div>
         </div>
 
         <div className="mt-10 text-xs text-white/45" data-testid="text-footer">
-          Want a custom theme (colors, your logo, webcam frame, alerts)? Tell me your vibe and I’ll style it.
+          Publish this project and share the link — anyone can customize their own OBS URL.
         </div>
       </div>
     </div>
