@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Monitor, Play, Square, Sparkles, Copy, ExternalLink } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import {
+  Monitor,
+  Play,
+  Square,
+  Sparkles,
+  Copy,
+  ExternalLink,
+  BookmarkPlus,
+  Trash2,
+  Pencil,
+  Check,
+} from "lucide-react";
 import {
   defaultSceneConfig,
   encodeConfigToQuery,
   type Accent,
   type SceneConfig,
 } from "@/lib/twitchSceneConfig";
+import { loadPresets, makeId, savePresets, type ScenePreset } from "@/lib/twitchPresets";
 
 const scenes = [
   {
@@ -48,10 +61,10 @@ type SceneId = (typeof scenes)[number]["id"];
 
 function useNowTime() {
   const [t, setT] = useState(() => new Date());
-  useState(() => {
+  useEffect(() => {
     const i = window.setInterval(() => setT(new Date()), 1000);
     return () => window.clearInterval(i);
-  });
+  }, []);
   return t;
 }
 
@@ -163,7 +176,12 @@ function SceneCanvas({ sceneId, cfg }: { sceneId: SceneId; cfg: SceneConfig }) {
 
           <div className="scene-badge rounded-full px-4 py-2" data-testid="pill-scene">
             <div className="flex items-center gap-2">
-              <span className={cn("inline-block h-1.5 w-1.5 rounded-full", accentDotClass(cfg.accent))} />
+              <span
+                className={cn(
+                  "inline-block h-1.5 w-1.5 rounded-full",
+                  accentDotClass(cfg.accent)
+                )}
+              />
               <span className="text-xs font-medium tracking-wide text-white/80">
                 {scene.label.toUpperCase()}
               </span>
@@ -306,7 +324,57 @@ export default function TwitchScenes() {
   const [cfg, setCfg] = useState<SceneConfig>(defaultSceneConfig);
   const [copied, setCopied] = useState(false);
 
+  const [presets, setPresets] = useState<ScenePreset[]>([]);
+  const [presetName, setPresetName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPresets(loadPresets());
+  }, []);
+
+  useEffect(() => {
+    savePresets(presets);
+  }, [presets]);
+
   const sceneUrl = buildSceneUrl(sceneId, cfg);
+
+  function applyPreset(p: ScenePreset) {
+    setCfg(p.config);
+    toast({ title: "Preset loaded", description: p.name });
+  }
+
+  function saveNewPreset() {
+    const name = presetName.trim() || "Untitled";
+    const now = Date.now();
+    const p: ScenePreset = {
+      id: makeId(),
+      name,
+      config: cfg,
+      createdAt: now,
+      updatedAt: now,
+    };
+    setPresets((prev) => [p, ...prev]);
+    setPresetName("");
+    toast({ title: "Preset saved" });
+  }
+
+  function updatePresetName(id: string, name: string) {
+    setPresets((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, name, updatedAt: Date.now() } : p))
+    );
+  }
+
+  function overwritePresetConfig(id: string) {
+    setPresets((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, config: cfg, updatedAt: Date.now() } : p))
+    );
+    toast({ title: "Preset updated" });
+  }
+
+  function deletePreset(id: string) {
+    setPresets((prev) => prev.filter((p) => p.id !== id));
+    toast({ title: "Preset deleted" });
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -330,7 +398,7 @@ export default function TwitchScenes() {
               className="mt-3 max-w-[66ch] text-pretty text-sm text-white/65 md:text-base"
               data-testid="text-description"
             >
-              Customize your channel name, handle, ticker words, and accent color — then copy your OBS-ready link.
+              Customize your channel name, handle, ticker words, and accent color — then save presets and copy an OBS-ready link.
             </p>
           </div>
 
@@ -401,7 +469,10 @@ export default function TwitchScenes() {
 
             <div className="glass rounded-3xl p-4" data-testid="panel-customize">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold tracking-tight text-white/90" data-testid="text-customize-title">
+                <div
+                  className="text-sm font-semibold tracking-tight text-white/90"
+                  data-testid="text-customize-title"
+                >
                   Customize
                 </div>
                 <Button
@@ -442,7 +513,11 @@ export default function TwitchScenes() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label className="text-white/80" htmlFor="nowPlaying" data-testid="label-nowplaying">
+                  <Label
+                    className="text-white/80"
+                    htmlFor="nowPlaying"
+                    data-testid="label-nowplaying"
+                  >
                     Now playing
                   </Label>
                   <Input
@@ -456,7 +531,11 @@ export default function TwitchScenes() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="grid gap-2">
-                    <Label className="text-white/80" htmlFor="labelLeft" data-testid="label-ticker-left">
+                    <Label
+                      className="text-white/80"
+                      htmlFor="labelLeft"
+                      data-testid="label-ticker-left"
+                    >
                       Ticker word 1
                     </Label>
                     <Input
@@ -468,7 +547,11 @@ export default function TwitchScenes() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label className="text-white/80" htmlFor="labelRight" data-testid="label-ticker-right">
+                    <Label
+                      className="text-white/80"
+                      htmlFor="labelRight"
+                      data-testid="label-ticker-right"
+                    >
                       Ticker word 2
                     </Label>
                     <Input
@@ -574,6 +657,137 @@ export default function TwitchScenes() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="glass rounded-3xl p-4" data-testid="panel-presets">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-semibold tracking-tight text-white/90" data-testid="text-presets-title">
+                  Presets
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={presetName}
+                    onChange={(e) => setPresetName(e.target.value)}
+                    placeholder="Preset name"
+                    className="h-9 bg-white/5 text-white/90"
+                    data-testid="input-preset-name"
+                  />
+                  <Button
+                    variant="secondary"
+                    className="gap-2"
+                    onClick={saveNewPreset}
+                    data-testid="button-save-preset"
+                  >
+                    <BookmarkPlus className="h-4 w-4" />
+                    Save
+                  </Button>
+                </div>
+              </div>
+
+              {presets.length === 0 ? (
+                <div
+                  className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/65"
+                  data-testid="text-presets-empty"
+                >
+                  No presets yet. Create one to quickly switch between different looks.
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-2" data-testid="list-presets">
+                  {presets.map((p) => {
+                    const isEditing = editingId === p.id;
+                    return (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-3"
+                        data-testid={`row-preset-${p.id}`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                "h-2.5 w-2.5 shrink-0 rounded-full",
+                                accentDotClass(p.config.accent)
+                              )}
+                            />
+                            {isEditing ? (
+                              <Input
+                                value={p.name}
+                                onChange={(e) => updatePresetName(p.id, e.target.value)}
+                                className="h-8 bg-white/0 text-white/90"
+                                data-testid={`input-preset-rename-${p.id}`}
+                              />
+                            ) : (
+                              <div
+                                className="truncate text-sm font-semibold text-white/90"
+                                data-testid={`text-preset-name-${p.id}`}
+                              >
+                                {p.name}
+                              </div>
+                            )}
+                          </div>
+                          <div
+                            className="mt-1 truncate font-mono text-[11px] tracking-[0.18em] text-white/55"
+                            data-testid={`text-preset-meta-${p.id}`}
+                          >
+                            {p.config.channel} • {p.config.handle}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="secondary"
+                            className="h-9 px-3"
+                            onClick={() => applyPreset(p)}
+                            data-testid={`button-preset-load-${p.id}`}
+                          >
+                            Load
+                          </Button>
+
+                          <Button
+                            variant="secondary"
+                            className="h-9 px-3"
+                            onClick={() => overwritePresetConfig(p.id)}
+                            data-testid={`button-preset-overwrite-${p.id}`}
+                          >
+                            Update
+                          </Button>
+
+                          <Button
+                            variant="secondary"
+                            className="h-9 w-9 p-0"
+                            onClick={() => {
+                              if (isEditing) {
+                                setEditingId(null);
+                                toast({ title: "Preset renamed" });
+                              } else {
+                                setEditingId(p.id);
+                              }
+                            }}
+                            data-testid={`button-preset-rename-${p.id}`}
+                            aria-label={isEditing ? "Done" : "Rename"}
+                          >
+                            {isEditing ? (
+                              <Check className="h-4 w-4" />
+                            ) : (
+                              <Pencil className="h-4 w-4" />
+                            )}
+                          </Button>
+
+                          <Button
+                            variant="secondary"
+                            className="h-9 w-9 p-0"
+                            onClick={() => deletePreset(p.id)}
+                            data-testid={`button-preset-delete-${p.id}`}
+                            aria-label="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
