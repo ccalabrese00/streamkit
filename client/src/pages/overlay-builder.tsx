@@ -26,7 +26,10 @@ import {
   Save,
   ExternalLink,
   ArrowLeft,
+  Wand2,
+  Loader2,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import {
   type OverlayElement,
   type CustomOverlay,
@@ -174,6 +177,8 @@ export default function OverlayBuilder() {
   const [savedOverlays, setSavedOverlays] = useState<CustomOverlay[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   const selectedElement = overlay.elements.find((e) => e.id === selectedId);
 
@@ -243,6 +248,49 @@ export default function OverlayBuilder() {
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
     toast({ title: "OBS link copied!" });
+  };
+
+  const generateAIOverlay = async () => {
+    if (!aiPrompt.trim() || aiGenerating) return;
+    setAiGenerating(true);
+    try {
+      const response = await fetch("/api/generate-overlay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPrompt }),
+      });
+      if (!response.ok) throw new Error("Failed to generate");
+      const data = await response.json();
+      const newElements: OverlayElement[] = (data.elements || []).map((el: Partial<OverlayElement>, i: number) => ({
+        id: `ai-${Date.now()}-${i}`,
+        type: el.type || "text",
+        x: el.x || 50,
+        y: el.y || 50,
+        width: el.width || 200,
+        height: el.height || 60,
+        content: el.content || "",
+        fontSize: el.fontSize || 24,
+        color: el.color || "#ffffff",
+        bgColor: el.bgColor || "#000000",
+        bgOpacity: el.bgOpacity ?? 0.5,
+        fontWeight: el.fontWeight || "normal",
+        textAlign: el.textAlign || "center",
+      }));
+      setOverlay((prev) => ({
+        ...prev,
+        name: data.name || prev.name,
+        bgColor: data.bgColor || prev.bgColor,
+        elements: newElements,
+        updatedAt: Date.now(),
+      }));
+      setAiPrompt("");
+      setSelectedId(null);
+      toast({ title: "Overlay generated!", description: "AI created your overlay based on your prompt." });
+    } catch (error) {
+      toast({ title: "Generation failed", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setAiGenerating(false);
+    }
   };
 
   const obsUrl = `/overlay/view?d=${encodeOverlayToQuery(overlay)}`;
@@ -324,6 +372,42 @@ export default function OverlayBuilder() {
           </div>
 
           <div className="space-y-4">
+            <div className="glass rounded-2xl p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-white/90 mb-3">
+                <Wand2 className="h-4 w-4 text-purple-400" />
+                AI Generator
+              </div>
+              <div className="grid gap-3">
+                <Textarea
+                  placeholder="Describe your overlay... e.g., 'cozy gaming stream with lo-fi vibes'"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  className="bg-white/5 text-white/90 text-sm min-h-[60px]"
+                  disabled={aiGenerating}
+                  data-testid="input-ai-prompt"
+                />
+                <Button
+                  variant="secondary"
+                  className="w-full gap-2"
+                  onClick={generateAIOverlay}
+                  disabled={!aiPrompt.trim() || aiGenerating}
+                  data-testid="button-ai-generate"
+                >
+                  {aiGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4" />
+                      Generate Overlay
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
             <div className="glass rounded-2xl p-4">
               <div className="text-sm font-semibold text-white/90 mb-3">Canvas</div>
               <div className="grid gap-3">
