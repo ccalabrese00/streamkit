@@ -332,6 +332,7 @@ export default function TwitchScenes() {
 
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiJustGenerated, setAiJustGenerated] = useState(false);
 
   useEffect(() => {
     setPresets(loadPresets());
@@ -399,9 +400,11 @@ export default function TwitchScenes() {
       const newConfig: SceneConfig = await response.json();
       setCfg(newConfig);
       setAiPrompt("");
+      setAiJustGenerated(true);
+      setTimeout(() => setAiJustGenerated(false), 3000);
       toast({
         title: "Scene generated!",
-        description: "AI created a new scene based on your prompt.",
+        description: "Check the preview — AI created a new scene based on your prompt.",
       });
     } catch (error) {
       toast({
@@ -880,13 +883,29 @@ export default function TwitchScenes() {
 
           <div>
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-white/90" data-testid="text-preview-title">
-                Preview
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-semibold text-white/90" data-testid="text-preview-title">
+                  Preview
+                </div>
+                {aiJustGenerated && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-300"
+                  >
+                    AI Generated!
+                  </motion.div>
+                )}
               </div>
             </div>
 
             <div
-              className={cn("mt-3", !playing && "[&_*]:!animate-none")}
+              className={cn(
+                "mt-3 transition-all duration-500",
+                !playing && "[&_*]:!animate-none",
+                aiJustGenerated && "ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-background rounded-3xl"
+              )}
               data-testid="wrap-preview"
             >
               <SceneCanvas sceneId={sceneId} cfg={cfg} />
