@@ -24,6 +24,8 @@ import {
   Trash2,
   Pencil,
   Check,
+  Wand2,
+  Loader2,
 } from "lucide-react";
 import {
   defaultSceneConfig,
@@ -328,6 +330,9 @@ export default function TwitchScenes() {
   const [presetName, setPresetName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+
   useEffect(() => {
     setPresets(loadPresets());
   }, []);
@@ -374,6 +379,39 @@ export default function TwitchScenes() {
   function deletePreset(id: string) {
     setPresets((prev) => prev.filter((p) => p.id !== id));
     toast({ title: "Preset deleted" });
+  }
+
+  async function generateAIScene() {
+    if (!aiPrompt.trim() || aiGenerating) return;
+
+    setAiGenerating(true);
+    try {
+      const response = await fetch("/api/generate-scene", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPrompt.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate scene");
+      }
+
+      const newConfig: SceneConfig = await response.json();
+      setCfg(newConfig);
+      setAiPrompt("");
+      toast({
+        title: "Scene generated!",
+        description: "AI created a new scene based on your prompt.",
+      });
+    } catch (error) {
+      toast({
+        title: "Generation failed",
+        description: "Could not generate scene. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAiGenerating(false);
+    }
   }
 
   return (
@@ -464,6 +502,55 @@ export default function TwitchScenes() {
                 <div className="mt-2 text-sm text-white/65" data-testid="text-tip">
                   In OBS: add a Browser Source → set Width 1920, Height 1080 → paste the link below.
                 </div>
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl p-4" data-testid="panel-ai-generator">
+              <div className="flex items-center gap-2">
+                <Wand2 className="h-4 w-4 text-white/70" />
+                <div
+                  className="text-sm font-semibold tracking-tight text-white/90"
+                  data-testid="text-ai-title"
+                >
+                  AI Scene Generator
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-white/65" data-testid="text-ai-description">
+                Describe the vibe you want and let AI create a custom scene configuration.
+              </div>
+              <div className="mt-4 grid gap-3">
+                <Input
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !aiGenerating) {
+                      generateAIScene();
+                    }
+                  }}
+                  placeholder="cyberpunk hacker vibes, cozy coffee shop stream, retro 80s arcade..."
+                  className="bg-white/5 text-white/90"
+                  disabled={aiGenerating}
+                  data-testid="input-ai-prompt"
+                />
+                <Button
+                  variant="secondary"
+                  className="w-full gap-2"
+                  onClick={generateAIScene}
+                  disabled={!aiPrompt.trim() || aiGenerating}
+                  data-testid="button-ai-generate"
+                >
+                  {aiGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4" />
+                      Generate Scene
+                    </>
+                  )}
+                </Button>
               </div>
             </div>
 
