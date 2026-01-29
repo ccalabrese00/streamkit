@@ -588,7 +588,7 @@ export default function TwitchScenes() {
               </div>
             </div>
 
-            <div className="glass rounded-3xl p-4 lg:col-span-2 max-h-[500px] overflow-y-auto" data-testid="panel-customize">
+            <div className="glass rounded-3xl p-4 lg:col-span-2" data-testid="panel-customize">
               <div className="flex items-center justify-between mb-3">
                 <div
                   className="text-sm font-semibold tracking-tight text-white/90"
