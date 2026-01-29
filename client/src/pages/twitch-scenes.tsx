@@ -26,7 +26,9 @@ import {
   Check,
   Wand2,
   Loader2,
+  Layers,
 } from "lucide-react";
+import { Link } from "wouter";
 import {
   defaultSceneConfig,
   encodeConfigToQuery,
@@ -447,6 +449,12 @@ export default function TwitchScenes() {
             >
               Customize your channel name, handle, ticker words, and accent color — then save presets and copy an OBS-ready link.
             </p>
+            <Link href="/overlay/builder">
+              <Button variant="secondary" className="mt-4 gap-2" data-testid="button-overlay-builder">
+                <Layers className="h-4 w-4" />
+                Custom Overlay Builder
+              </Button>
+            </Link>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">

@@ -6,12 +6,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import TwitchScenes from "@/pages/twitch-scenes.tsx";
 import TwitchSceneFullscreen from "@/pages/twitch-scene-fullscreen.tsx";
+import OverlayBuilder from "@/pages/overlay-builder.tsx";
+import OverlayView from "@/pages/overlay-view.tsx";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={TwitchScenes} />
       <Route path="/scene/:id" component={TwitchSceneFullscreen} />
+      <Route path="/overlay/builder" component={OverlayBuilder} />
+      <Route path="/overlay/view" component={OverlayView} />
       <Route component={NotFound} />
     </Switch>
   );
