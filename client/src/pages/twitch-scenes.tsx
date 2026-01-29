@@ -515,27 +515,7 @@ export default function TwitchScenes() {
             </Link>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant={playing ? "default" : "secondary"}
-              onClick={() => setPlaying(true)}
-              className="gap-2"
-              data-testid="button-play"
-            >
-              <Play className="h-4 w-4" />
-              Play
-            </Button>
-            <Button
-              variant={!playing ? "default" : "secondary"}
-              onClick={() => setPlaying(false)}
-              className="gap-2"
-              data-testid="button-pause"
-            >
-              <Square className="h-4 w-4" />
-              Pause
-            </Button>
-          </div>
-        </header>
+          </header>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div className="glass rounded-3xl p-4">
@@ -991,15 +971,39 @@ export default function TwitchScenes() {
             </div>
           </div>
 
-          <div
-            className={cn(
-              "transition-all duration-500 max-w-4xl mx-auto",
-              !playing && "[&_*]:!animate-none",
-              aiJustGenerated && "ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-background rounded-3xl"
-            )}
-            data-testid="wrap-preview"
-          >
-            <SceneCanvas sceneId={sceneId} cfg={cfg} allScenes={allScenes} />
+          <div className="relative max-w-4xl mx-auto">
+            <div className="absolute top-4 right-4 z-10 flex gap-2">
+              <Button
+                variant={playing ? "default" : "secondary"}
+                size="sm"
+                onClick={() => setPlaying(true)}
+                className="gap-1.5"
+                data-testid="button-play"
+              >
+                <Play className="h-3.5 w-3.5" />
+                Play
+              </Button>
+              <Button
+                variant={!playing ? "default" : "secondary"}
+                size="sm"
+                onClick={() => setPlaying(false)}
+                className="gap-1.5"
+                data-testid="button-pause"
+              >
+                <Square className="h-3.5 w-3.5" />
+                Pause
+              </Button>
+            </div>
+            <div
+              className={cn(
+                "transition-all duration-500",
+                !playing && "[&_*]:!animate-none",
+                aiJustGenerated && "ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-background rounded-3xl"
+              )}
+              data-testid="wrap-preview"
+            >
+              <SceneCanvas sceneId={sceneId} cfg={cfg} allScenes={allScenes} />
+            </div>
           </div>
         </div>
 
