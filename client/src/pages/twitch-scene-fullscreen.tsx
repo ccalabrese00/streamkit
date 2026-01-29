@@ -138,10 +138,19 @@ export default function TwitchSceneFullscreen() {
               <div className="font-mono text-xs tracking-[0.22em] text-white/55">NOW PLAYING</div>
               <div className="mt-2 text-lg font-semibold text-white/90">{cfg.nowPlaying}</div>
             </div>
-            <div className="glass floaty-2 rounded-3xl px-6 py-5" data-testid="card-full-2">
-              <div className="font-mono text-xs tracking-[0.22em] text-white/55">SOCIAL</div>
-              <div className="mt-2 text-lg font-semibold text-white/90">{cfg.handle}</div>
-            </div>
+            {Object.values(cfg.socials).some(v => v) && (
+              <div className="glass floaty-2 rounded-3xl px-6 py-5" data-testid="card-full-2">
+                <div className="font-mono text-xs tracking-[0.22em] text-white/55">SOCIALS</div>
+                <div className="mt-2 flex flex-wrap gap-3 text-base font-semibold text-white/90">
+                  {cfg.socials.twitch && <span>twitch.tv/{cfg.socials.twitch}</span>}
+                  {cfg.socials.youtube && <span>@{cfg.socials.youtube}</span>}
+                  {cfg.socials.instagram && <span>@{cfg.socials.instagram}</span>}
+                  {cfg.socials.x && <span>@{cfg.socials.x}</span>}
+                  {cfg.socials.tiktok && <span>@{cfg.socials.tiktok}</span>}
+                  {cfg.socials.discord && <span>{cfg.socials.discord}</span>}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

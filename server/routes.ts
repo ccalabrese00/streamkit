@@ -29,7 +29,14 @@ export async function registerRoutes(
 Output ONLY valid JSON matching this TypeScript type:
 {
   channel: string; // stream channel name
-  handle: string; // @username format
+  socials: {
+    twitch: string; // twitch username (without twitch.tv/)
+    youtube: string; // youtube handle (without @)
+    instagram: string; // instagram handle (without @)
+    x: string; // X/Twitter handle (without @)
+    tiktok: string; // tiktok handle (without @)
+    discord: string; // discord server invite or name
+  };
   nowPlaying: string; // music/game ticker text
   labelLeft: string; // left footer label (usually "FOLLOW")
   labelRight: string; // right footer label (usually "SUBSCRIBE")
@@ -37,7 +44,7 @@ Output ONLY valid JSON matching this TypeScript type:
   showTime: boolean; // whether to show current time
 }
 
-Create thematic, cohesive designs. Be creative with channel names, handles, and ticker text that match the vibe.`
+Create thematic, cohesive designs. Be creative with channel names, socials, and ticker text that match the vibe. Fill in relevant social handles based on the theme.`
           },
           {
             role: "user",

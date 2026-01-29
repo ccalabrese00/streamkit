@@ -2,9 +2,18 @@ export type SceneId = "opening" | "brb" | "ending";
 
 export type Accent = "purple" | "cyan" | "pink" | "lime" | "amber" | "red";
 
+export type Socials = {
+  twitch: string;
+  youtube: string;
+  instagram: string;
+  x: string;
+  tiktok: string;
+  discord: string;
+};
+
 export type SceneConfig = {
   channel: string;
-  handle: string;
+  socials: Socials;
   nowPlaying: string;
   labelLeft: string;
   labelRight: string;
@@ -12,9 +21,18 @@ export type SceneConfig = {
   showTime: boolean;
 };
 
+export const defaultSocials: Socials = {
+  twitch: "",
+  youtube: "",
+  instagram: "",
+  x: "",
+  tiktok: "",
+  discord: "",
+};
+
 export const defaultSceneConfig: SceneConfig = {
   channel: "Your Channel",
-  handle: "@yourhandle",
+  socials: { ...defaultSocials },
   nowPlaying: "Lo-fi • chill set",
   labelLeft: "FOLLOW",
   labelRight: "SUBSCRIBE",
@@ -25,7 +43,12 @@ export const defaultSceneConfig: SceneConfig = {
 export function encodeConfigToQuery(cfg: SceneConfig) {
   const sp = new URLSearchParams();
   sp.set("ch", cfg.channel);
-  sp.set("h", cfg.handle);
+  sp.set("tw", cfg.socials.twitch);
+  sp.set("yt", cfg.socials.youtube);
+  sp.set("ig", cfg.socials.instagram);
+  sp.set("x", cfg.socials.x);
+  sp.set("tt", cfg.socials.tiktok);
+  sp.set("dc", cfg.socials.discord);
   sp.set("np", cfg.nowPlaying);
   sp.set("l", cfg.labelLeft);
   sp.set("r", cfg.labelRight);
@@ -47,7 +70,14 @@ export function decodeConfigFromQuery(search: string): SceneConfig {
 
   return {
     channel: sp.get("ch") || defaultSceneConfig.channel,
-    handle: sp.get("h") || defaultSceneConfig.handle,
+    socials: {
+      twitch: sp.get("tw") || "",
+      youtube: sp.get("yt") || "",
+      instagram: sp.get("ig") || "",
+      x: sp.get("x") || "",
+      tiktok: sp.get("tt") || "",
+      discord: sp.get("dc") || "",
+    },
     nowPlaying: sp.get("np") || defaultSceneConfig.nowPlaying,
     labelLeft: sp.get("l") || defaultSceneConfig.labelLeft,
     labelRight: sp.get("r") || defaultSceneConfig.labelRight,

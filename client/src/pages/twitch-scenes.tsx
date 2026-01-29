@@ -230,13 +230,19 @@ function SceneCanvas({ sceneId, cfg }: { sceneId: SceneId; cfg: SceneConfig }) {
                 <span className="font-mono text-xs text-white/60">{cfg.nowPlaying}</span>
               </div>
 
-              <div
-                className="glass inline-flex items-center gap-2 rounded-2xl px-4 py-3"
-                data-testid="card-social"
-              >
-                <span className="text-sm font-medium text-white/85">{cfg.handle}</span>
-                <span className="font-mono text-xs text-white/60">• socials in chat</span>
-              </div>
+              {Object.entries(cfg.socials).filter(([_, v]) => v).length > 0 && (
+                <div
+                  className="glass inline-flex flex-wrap items-center gap-2 rounded-2xl px-4 py-3"
+                  data-testid="card-social"
+                >
+                  {cfg.socials.twitch && <span className="font-mono text-xs text-white/70">twitch.tv/{cfg.socials.twitch}</span>}
+                  {cfg.socials.youtube && <span className="font-mono text-xs text-white/70">@{cfg.socials.youtube}</span>}
+                  {cfg.socials.instagram && <span className="font-mono text-xs text-white/70">@{cfg.socials.instagram}</span>}
+                  {cfg.socials.x && <span className="font-mono text-xs text-white/70">@{cfg.socials.x}</span>}
+                  {cfg.socials.tiktok && <span className="font-mono text-xs text-white/70">@{cfg.socials.tiktok}</span>}
+                  {cfg.socials.discord && <span className="font-mono text-xs text-white/70">{cfg.socials.discord}</span>}
+                </div>
+              )}
             </div>
           </div>
 
@@ -590,16 +596,53 @@ export default function TwitchScenes() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label className="text-white/80" htmlFor="handle" data-testid="label-handle">
-                    Social handle
+                  <Label className="text-white/80" data-testid="label-socials">
+                    Social handles
                   </Label>
-                  <Input
-                    id="handle"
-                    value={cfg.handle}
-                    onChange={(e) => setCfg((p) => ({ ...p, handle: e.target.value }))}
-                    className="bg-white/5 text-white/90"
-                    data-testid="input-handle"
-                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      placeholder="Twitch"
+                      value={cfg.socials.twitch}
+                      onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, twitch: e.target.value } }))}
+                      className="bg-white/5 text-white/90 text-sm"
+                      data-testid="input-twitch"
+                    />
+                    <Input
+                      placeholder="YouTube"
+                      value={cfg.socials.youtube}
+                      onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, youtube: e.target.value } }))}
+                      className="bg-white/5 text-white/90 text-sm"
+                      data-testid="input-youtube"
+                    />
+                    <Input
+                      placeholder="Instagram"
+                      value={cfg.socials.instagram}
+                      onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, instagram: e.target.value } }))}
+                      className="bg-white/5 text-white/90 text-sm"
+                      data-testid="input-instagram"
+                    />
+                    <Input
+                      placeholder="X (Twitter)"
+                      value={cfg.socials.x}
+                      onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, x: e.target.value } }))}
+                      className="bg-white/5 text-white/90 text-sm"
+                      data-testid="input-x"
+                    />
+                    <Input
+                      placeholder="TikTok"
+                      value={cfg.socials.tiktok}
+                      onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, tiktok: e.target.value } }))}
+                      className="bg-white/5 text-white/90 text-sm"
+                      data-testid="input-tiktok"
+                    />
+                    <Input
+                      placeholder="Discord"
+                      value={cfg.socials.discord}
+                      onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, discord: e.target.value } }))}
+                      className="bg-white/5 text-white/90 text-sm"
+                      data-testid="input-discord"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid gap-2">
@@ -819,7 +862,7 @@ export default function TwitchScenes() {
                             className="mt-1 truncate font-mono text-[11px] tracking-[0.18em] text-white/55"
                             data-testid={`text-preset-meta-${p.id}`}
                           >
-                            {p.config.channel} • {p.config.handle}
+                            {p.config.channel} • {p.config.socials?.twitch || p.config.socials?.instagram || p.config.socials?.youtube || "no socials"}
                           </div>
                         </div>
 
