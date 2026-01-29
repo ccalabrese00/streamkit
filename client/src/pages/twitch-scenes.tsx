@@ -37,6 +37,7 @@ import {
   type SceneConfig,
 } from "@/lib/twitchSceneConfig";
 import { loadPresets, makeId, savePresets, type ScenePreset } from "@/lib/twitchPresets";
+import { loadOverlays, encodeOverlayToQuery, type CustomOverlay } from "@/lib/overlayConfig";
 
 interface SceneType {
   id: string;
@@ -389,6 +390,7 @@ export default function TwitchScenes() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiJustGenerated, setAiJustGenerated] = useState(false);
+  const [savedOverlays, setSavedOverlays] = useState<CustomOverlay[]>([]);
 
   const editingScene = editingSceneId ? allScenes.find((s) => s.id === editingSceneId) : null;
 
@@ -396,6 +398,7 @@ export default function TwitchScenes() {
     setPresets(loadPresets());
     setCustomScenes(loadCustomScenes());
     setSceneOverrides(loadSceneOverrides());
+    setSavedOverlays(loadOverlays());
   }, []);
 
   useEffect(() => {
@@ -723,6 +726,65 @@ export default function TwitchScenes() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {savedOverlays.length > 0 && (
+                <div className="mt-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs font-medium text-white/75">Custom Overlays</div>
+                    <Link href="/overlay/builder">
+                      <Button variant="ghost" size="sm" className="h-6 text-xs px-2" data-testid="button-edit-overlays">
+                        Edit
+                      </Button>
+                    </Link>
+                  </div>
+                  <div className="grid gap-2">
+                    {savedOverlays.map((overlay) => (
+                      <div
+                        key={overlay.id}
+                        className="group flex items-center justify-between rounded-xl px-3 py-2 border border-white/10 bg-white/5 hover:bg-white/10 transition"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div
+                            className="h-6 w-6 rounded shrink-0"
+                            style={{ backgroundColor: overlay.bgColor }}
+                          />
+                          <span className="text-sm text-white/80 truncate">{overlay.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                            onClick={async () => {
+                              const encoded = encodeOverlayToQuery(overlay);
+                              const url = `${window.location.origin}/overlay/view?d=${encoded}`;
+                              await navigator.clipboard.writeText(url);
+                              toast({ title: "OBS link copied!" });
+                            }}
+                            data-testid={`button-copy-overlay-${overlay.id}`}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <a
+                            href={`/overlay/view?d=${encodeOverlayToQuery(overlay)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                              data-testid={`button-preview-overlay-${overlay.id}`}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
