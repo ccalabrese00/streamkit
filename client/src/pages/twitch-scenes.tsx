@@ -72,6 +72,7 @@ const defaultScenes: SceneType[] = [
 ];
 
 const CUSTOM_SCENES_KEY = "twitch_custom_scenes";
+const SCENE_OVERRIDES_KEY = "twitch_scene_overrides";
 
 function loadCustomScenes(): SceneType[] {
   try {
@@ -84,6 +85,26 @@ function loadCustomScenes(): SceneType[] {
 
 function saveCustomScenes(list: SceneType[]): void {
   localStorage.setItem(CUSTOM_SCENES_KEY, JSON.stringify(list));
+}
+
+function loadSceneOverrides(): Record<string, Partial<SceneType>> {
+  try {
+    const data = localStorage.getItem(SCENE_OVERRIDES_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveSceneOverrides(overrides: Record<string, Partial<SceneType>>): void {
+  localStorage.setItem(SCENE_OVERRIDES_KEY, JSON.stringify(overrides));
+}
+
+function applyOverrides(scenes: SceneType[], overrides: Record<string, Partial<SceneType>>): SceneType[] {
+  return scenes.map((scene) => {
+    const override = overrides[scene.id];
+    return override ? { ...scene, ...override } : scene;
+  });
 }
 
 function useNowTime() {
@@ -354,7 +375,8 @@ function SceneCanvas({ sceneId, cfg, allScenes }: { sceneId: string; cfg: SceneC
 export default function TwitchScenes() {
   const [sceneId, setSceneId] = useState<string>("opening");
   const [customScenes, setCustomScenes] = useState<SceneType[]>([]);
-  const allScenes = [...defaultScenes, ...customScenes];
+  const [sceneOverrides, setSceneOverrides] = useState<Record<string, Partial<SceneType>>>({});
+  const allScenes = [...applyOverrides(defaultScenes, sceneOverrides), ...customScenes];
   const [playing, setPlaying] = useState(true);
   const [cfg, setCfg] = useState<SceneConfig>(defaultSceneConfig);
   const [copied, setCopied] = useState(false);
@@ -362,14 +384,18 @@ export default function TwitchScenes() {
   const [presets, setPresets] = useState<ScenePreset[]>([]);
   const [presetName, setPresetName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingSceneId, setEditingSceneId] = useState<string | null>(null);
 
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiJustGenerated, setAiJustGenerated] = useState(false);
 
+  const editingScene = editingSceneId ? allScenes.find((s) => s.id === editingSceneId) : null;
+
   useEffect(() => {
     setPresets(loadPresets());
     setCustomScenes(loadCustomScenes());
+    setSceneOverrides(loadSceneOverrides());
   }, []);
 
   useEffect(() => {
@@ -379,6 +405,36 @@ export default function TwitchScenes() {
   useEffect(() => {
     saveCustomScenes(customScenes);
   }, [customScenes]);
+
+  useEffect(() => {
+    saveSceneOverrides(sceneOverrides);
+  }, [sceneOverrides]);
+
+  function updateScene(id: string, updates: Partial<SceneType>) {
+    const isDefault = defaultScenes.some((s) => s.id === id);
+    if (isDefault) {
+      setSceneOverrides((prev) => ({
+        ...prev,
+        [id]: { ...prev[id], ...updates },
+      }));
+    } else {
+      setCustomScenes((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+      );
+    }
+  }
+
+  function resetScene(id: string) {
+    const isDefault = defaultScenes.some((s) => s.id === id);
+    if (isDefault) {
+      setSceneOverrides((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      toast({ title: "Scene reset to default" });
+    }
+  }
 
   function addCustomScene() {
     const newScene: SceneType = {
@@ -556,8 +612,20 @@ export default function TwitchScenes() {
                         <div className="text-sm font-semibold text-white/90">{s.label}</div>
                         <div className="mt-0.5 font-mono text-xs text-white/55">1920×1080</div>
                       </button>
-                      <div className="flex items-center gap-2">
-                        <div className={cn("h-2.5 w-2.5 rounded-full", accentDotClass(s.accent))} />
+                      <div className="flex items-center gap-1">
+                        <div className={cn("h-2.5 w-2.5 rounded-full mr-1", accentDotClass(s.accent))} />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingSceneId(editingSceneId === s.id ? null : s.id);
+                          }}
+                          data-testid={`button-edit-scene-${s.id}`}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
                         {s.isCustom && (
                           <Button
                             variant="ghost"
@@ -577,6 +645,87 @@ export default function TwitchScenes() {
                   );
                 })}
               </div>
+
+              {editingScene && (
+                <div className="mt-4 rounded-2xl border border-purple-500/30 bg-purple-500/10 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-xs font-medium text-purple-300">Edit Scene</div>
+                    <div className="flex gap-2">
+                      {!editingScene.isCustom && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs px-2"
+                          onClick={() => {
+                            resetScene(editingScene.id);
+                            setEditingSceneId(null);
+                          }}
+                          data-testid="button-reset-scene"
+                        >
+                          Reset
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => setEditingSceneId(null)}
+                        data-testid="button-close-edit"
+                      >
+                        <Check className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid gap-3">
+                    <div>
+                      <Label className="text-white/60 text-xs">Label</Label>
+                      <Input
+                        value={editingScene.label}
+                        onChange={(e) => updateScene(editingScene.id, { label: e.target.value })}
+                        className="bg-white/5 text-white/90 text-sm h-8 mt-1"
+                        data-testid="input-scene-label"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-white/60 text-xs">Title</Label>
+                      <Input
+                        value={editingScene.title}
+                        onChange={(e) => updateScene(editingScene.id, { title: e.target.value })}
+                        className="bg-white/5 text-white/90 text-sm h-8 mt-1"
+                        data-testid="input-scene-title"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-white/60 text-xs">Subtitle</Label>
+                      <Input
+                        value={editingScene.subtitle}
+                        onChange={(e) => updateScene(editingScene.id, { subtitle: e.target.value })}
+                        className="bg-white/5 text-white/90 text-sm h-8 mt-1"
+                        data-testid="input-scene-subtitle"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-white/60 text-xs">Accent Color</Label>
+                      <Select
+                        value={editingScene.accent}
+                        onValueChange={(v) => updateScene(editingScene.id, { accent: v as Accent })}
+                      >
+                        <SelectTrigger className="bg-white/5 text-white/90 text-sm h-8 mt-1" data-testid="select-scene-accent">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="purple">Purple</SelectItem>
+                          <SelectItem value="cyan">Cyan</SelectItem>
+                          <SelectItem value="pink">Pink</SelectItem>
+                          <SelectItem value="lime">Lime</SelectItem>
+                          <SelectItem value="amber">Amber</SelectItem>
+                          <SelectItem value="red">Red</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
                 <div className="text-xs font-medium text-white/75" data-testid="text-tip-title">
