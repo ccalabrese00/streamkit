@@ -479,8 +479,7 @@ export default function TwitchScenes() {
           </div>
         </header>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[320px_1fr]">
-          <div className="grid gap-6 content-start">
+        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div className="glass rounded-3xl p-4">
               <div
                 className="text-sm font-semibold tracking-tight text-white/90"
@@ -939,39 +938,36 @@ export default function TwitchScenes() {
                 </div>
               )}
             </div>
+        </div>
+
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="text-sm font-semibold text-white/90" data-testid="text-preview-title">
+                Preview
+              </div>
+              {aiJustGenerated && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-300"
+                >
+                  AI Generated!
+                </motion.div>
+              )}
+            </div>
           </div>
 
-          <div className="grid gap-6 content-start">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-semibold text-white/90" data-testid="text-preview-title">
-                    Preview
-                  </div>
-                  {aiJustGenerated && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-300"
-                    >
-                      AI Generated!
-                    </motion.div>
-                  )}
-                </div>
-              </div>
-
-              <div
-                className={cn(
-                  "transition-all duration-500",
-                  !playing && "[&_*]:!animate-none",
-                  aiJustGenerated && "ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-background rounded-3xl"
-                )}
-                data-testid="wrap-preview"
-              >
-                <SceneCanvas sceneId={sceneId} cfg={cfg} />
-              </div>
-            </div>
+          <div
+            className={cn(
+              "transition-all duration-500 max-w-4xl mx-auto",
+              !playing && "[&_*]:!animate-none",
+              aiJustGenerated && "ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-background rounded-3xl"
+            )}
+            data-testid="wrap-preview"
+          >
+            <SceneCanvas sceneId={sceneId} cfg={cfg} />
           </div>
         </div>
 
