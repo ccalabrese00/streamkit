@@ -465,8 +465,8 @@ export default function TwitchScenes() {
           </div>
         </header>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-[360px_1fr]">
-          <div className="grid gap-6">
+        <div className="mt-8 grid gap-6 md:grid-cols-[1fr_360px]">
+          <div className="grid gap-6 content-start">
             <div className="glass rounded-3xl p-4">
               <div
                 className="text-sm font-semibold tracking-tight text-white/90"
@@ -474,7 +474,7 @@ export default function TwitchScenes() {
               >
                 Scenes
               </div>
-              <div className="mt-4 grid gap-2">
+              <div className="mt-4 grid grid-cols-3 gap-2">
                 {scenes.map((s) => {
                   const active = s.id === sceneId;
                   return (
@@ -482,31 +482,62 @@ export default function TwitchScenes() {
                       key={s.id}
                       onClick={() => setSceneId(s.id)}
                       className={cn(
-                        "group flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition",
+                        "group flex w-full flex-col items-center justify-center rounded-2xl px-3 py-4 text-center transition",
                         "border border-white/10 bg-white/5 hover:bg-white/7",
                         active && "bg-white/10"
                       )}
                       data-testid={`button-scene-${s.id}`}
                     >
-                      <div>
-                        <div className="text-sm font-semibold text-white/90">{s.label}</div>
-                        <div className="mt-0.5 font-mono text-xs text-white/55">1920×1080 • loop</div>
-                      </div>
-                      <div className={cn("h-2.5 w-2.5 rounded-full", accentDotClass(cfg.accent))} />
+                      <div className={cn("h-2.5 w-2.5 rounded-full mb-2", accentDotClass(cfg.accent))} />
+                      <div className="text-sm font-semibold text-white/90">{s.label}</div>
                     </button>
                   );
                 })}
               </div>
+            </div>
 
-              <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
-                <div className="text-xs font-medium text-white/75" data-testid="text-tip-title">
-                  Tip
-                </div>
-                <div className="mt-2 text-sm text-white/65" data-testid="text-tip">
-                  In OBS: add a Browser Source → set Width 1920, Height 1080 → paste the link below.
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-semibold text-white/90" data-testid="text-preview-title">
+                    Preview
+                  </div>
+                  {aiJustGenerated && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-300"
+                    >
+                      AI Generated!
+                    </motion.div>
+                  )}
                 </div>
               </div>
+
+              <div
+                className={cn(
+                  "transition-all duration-500",
+                  !playing && "[&_*]:!animate-none",
+                  aiJustGenerated && "ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-background rounded-3xl"
+                )}
+                data-testid="wrap-preview"
+              >
+                <SceneCanvas sceneId={sceneId} cfg={cfg} />
+              </div>
             </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+              <div className="text-xs font-medium text-white/75" data-testid="text-tip-title">
+                Tip
+              </div>
+              <div className="mt-2 text-sm text-white/65" data-testid="text-tip">
+                In OBS: add a Browser Source → set Width 1920, Height 1080 → paste the link below.
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6 content-start">
 
             <div className="glass rounded-3xl p-4" data-testid="panel-ai-generator">
               <div className="flex items-center gap-2">
@@ -878,37 +909,6 @@ export default function TwitchScenes() {
                   })}
                 </div>
               )}
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="text-sm font-semibold text-white/90" data-testid="text-preview-title">
-                  Preview
-                </div>
-                {aiJustGenerated && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-medium text-emerald-300"
-                  >
-                    AI Generated!
-                  </motion.div>
-                )}
-              </div>
-            </div>
-
-            <div
-              className={cn(
-                "mt-3 transition-all duration-500",
-                !playing && "[&_*]:!animate-none",
-                aiJustGenerated && "ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-background rounded-3xl"
-              )}
-              data-testid="wrap-preview"
-            >
-              <SceneCanvas sceneId={sceneId} cfg={cfg} />
             </div>
           </div>
         </div>
