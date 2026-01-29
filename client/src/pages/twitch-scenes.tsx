@@ -521,8 +521,8 @@ export default function TwitchScenes() {
               </div>
             </div>
 
-            <div className="glass rounded-3xl p-4" data-testid="panel-customize">
-              <div className="flex items-center justify-between">
+            <div className="glass rounded-3xl p-4 lg:col-span-2 max-h-[500px] overflow-y-auto" data-testid="panel-customize">
+              <div className="flex items-center justify-between mb-3">
                 <div
                   className="text-sm font-semibold tracking-tight text-white/90"
                   data-testid="text-customize-title"
@@ -531,7 +531,7 @@ export default function TwitchScenes() {
                 </div>
                 <Button
                   variant="secondary"
-                  className="gap-2"
+                  size="sm"
                   onClick={() => setCfg(defaultSceneConfig)}
                   data-testid="button-reset"
                 >
@@ -539,173 +539,139 @@ export default function TwitchScenes() {
                 </Button>
               </div>
 
-              <div className="mt-4 grid gap-4">
-                <div className="grid gap-2">
-                  <Label className="text-white/80" htmlFor="channel" data-testid="label-channel">
+              <div className="grid gap-3">
+                <div className="grid gap-1">
+                  <Label className="text-white/70 text-xs" htmlFor="channel" data-testid="label-channel">
                     Channel name
                   </Label>
                   <Input
                     id="channel"
                     value={cfg.channel}
                     onChange={(e) => setCfg((p) => ({ ...p, channel: e.target.value }))}
-                    className="bg-white/5 text-white/90"
+                    className="bg-white/5 text-white/90 h-8 text-sm"
                     data-testid="input-channel"
                   />
                 </div>
 
-                <div className="grid gap-2">
-                  <Label className="text-white/80" data-testid="label-socials">
+                <div className="grid gap-1">
+                  <Label className="text-white/70 text-xs" data-testid="label-socials">
                     Social handles
                   </Label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     <Input
                       placeholder="Twitch"
                       value={cfg.socials.twitch}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, twitch: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-sm"
+                      className="bg-white/5 text-white/90 text-xs h-8"
                       data-testid="input-twitch"
                     />
                     <Input
                       placeholder="YouTube"
                       value={cfg.socials.youtube}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, youtube: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-sm"
+                      className="bg-white/5 text-white/90 text-xs h-8"
                       data-testid="input-youtube"
                     />
                     <Input
                       placeholder="Instagram"
                       value={cfg.socials.instagram}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, instagram: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-sm"
+                      className="bg-white/5 text-white/90 text-xs h-8"
                       data-testid="input-instagram"
                     />
                     <Input
-                      placeholder="X (Twitter)"
+                      placeholder="X"
                       value={cfg.socials.x}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, x: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-sm"
+                      className="bg-white/5 text-white/90 text-xs h-8"
                       data-testid="input-x"
                     />
                     <Input
                       placeholder="TikTok"
                       value={cfg.socials.tiktok}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, tiktok: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-sm"
+                      className="bg-white/5 text-white/90 text-xs h-8"
                       data-testid="input-tiktok"
                     />
                     <Input
                       placeholder="Discord"
                       value={cfg.socials.discord}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, discord: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-sm"
+                      className="bg-white/5 text-white/90 text-xs h-8"
                       data-testid="input-discord"
                     />
                   </div>
                 </div>
 
-                <div className="grid gap-2">
-                  <Label
-                    className="text-white/80"
-                    htmlFor="nowPlaying"
-                    data-testid="label-nowplaying"
-                  >
+                <div className="grid gap-1">
+                  <Label className="text-white/70 text-xs" htmlFor="nowPlaying" data-testid="label-nowplaying">
                     Now playing
                   </Label>
                   <Input
                     id="nowPlaying"
                     value={cfg.nowPlaying}
                     onChange={(e) => setCfg((p) => ({ ...p, nowPlaying: e.target.value }))}
-                    className="bg-white/5 text-white/90"
+                    className="bg-white/5 text-white/90 h-8 text-sm"
                     data-testid="input-nowplaying"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="grid gap-2">
-                    <Label
-                      className="text-white/80"
-                      htmlFor="labelLeft"
-                      data-testid="label-ticker-left"
-                    >
-                      Ticker word 1
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-1">
+                    <Label className="text-white/70 text-xs" htmlFor="labelLeft" data-testid="label-ticker-left">
+                      Ticker 1
                     </Label>
                     <Input
                       id="labelLeft"
                       value={cfg.labelLeft}
                       onChange={(e) => setCfg((p) => ({ ...p, labelLeft: e.target.value }))}
-                      className="bg-white/5 text-white/90"
+                      className="bg-white/5 text-white/90 h-8 text-sm"
                       data-testid="input-ticker-left"
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label
-                      className="text-white/80"
-                      htmlFor="labelRight"
-                      data-testid="label-ticker-right"
-                    >
-                      Ticker word 2
+                  <div className="grid gap-1">
+                    <Label className="text-white/70 text-xs" htmlFor="labelRight" data-testid="label-ticker-right">
+                      Ticker 2
                     </Label>
                     <Input
                       id="labelRight"
                       value={cfg.labelRight}
                       onChange={(e) => setCfg((p) => ({ ...p, labelRight: e.target.value }))}
-                      className="bg-white/5 text-white/90"
+                      className="bg-white/5 text-white/90 h-8 text-sm"
                       data-testid="input-ticker-right"
                     />
                   </div>
                 </div>
 
                 <div className="grid gap-2">
-                  <Label className="text-white/80" data-testid="label-accent">
-                    Accent color
-                  </Label>
-                  <Select
-                    value={cfg.accent}
-                    onValueChange={(v) => setCfg((p) => ({ ...p, accent: v as Accent }))}
-                  >
-                    <SelectTrigger
-                      className="bg-white/5 text-white/90"
-                      data-testid="select-accent"
+                  <Label className="text-white/70 text-xs" data-testid="label-accent">Accent</Label>
+                    <Select
+                      value={cfg.accent}
+                      onValueChange={(v) => setCfg((p) => ({ ...p, accent: v as Accent }))}
                     >
-                      <SelectValue placeholder="Pick a color" />
-                    </SelectTrigger>
-                    <SelectContent data-testid="select-accent-content">
-                      <SelectItem value="purple" data-testid="option-accent-purple">
-                        Purple
-                      </SelectItem>
-                      <SelectItem value="cyan" data-testid="option-accent-cyan">
-                        Cyan
-                      </SelectItem>
-                      <SelectItem value="pink" data-testid="option-accent-pink">
-                        Pink
-                      </SelectItem>
-                      <SelectItem value="lime" data-testid="option-accent-lime">
-                        Lime
-                      </SelectItem>
-                      <SelectItem value="amber" data-testid="option-accent-amber">
-                        Amber
-                      </SelectItem>
-                      <SelectItem value="red" data-testid="option-accent-red">
-                        Red
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                      <SelectTrigger className="bg-white/5 text-white/90 h-8 text-sm" data-testid="select-accent">
+                        <SelectValue placeholder="Color" />
+                      </SelectTrigger>
+                      <SelectContent data-testid="select-accent-content">
+                        <SelectItem value="purple" data-testid="option-accent-purple">Purple</SelectItem>
+                        <SelectItem value="cyan" data-testid="option-accent-cyan">Cyan</SelectItem>
+                        <SelectItem value="pink" data-testid="option-accent-pink">Pink</SelectItem>
+                        <SelectItem value="lime" data-testid="option-accent-lime">Lime</SelectItem>
+                        <SelectItem value="amber" data-testid="option-accent-amber">Amber</SelectItem>
+                        <SelectItem value="red" data-testid="option-accent-red">Red</SelectItem>
+                      </SelectContent>
+                    </Select>
                 </div>
 
-                <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <div>
-                    <div className="text-sm font-semibold text-white/90" data-testid="text-toggle-time-title">
-                      Show time
-                    </div>
-                    <div className="mt-0.5 text-xs text-white/60" data-testid="text-toggle-time-desc">
-                      Turn off if you don’t want a clock in your overlay.
-                    </div>
-                  </div>
+                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
                   <Switch
                     checked={cfg.showTime}
                     onCheckedChange={(v) => setCfg((p) => ({ ...p, showTime: v }))}
                     data-testid="switch-showtime"
                   />
+                  <div className="text-xs text-white/70" data-testid="text-toggle-time-title">
+                    Show clock
+                  </div>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
