@@ -120,8 +120,8 @@ function SceneCanvas({ sceneId, cfg }: { sceneId: SceneId; cfg: SceneConfig }) {
   return (
     <div
       className={cn(
-        "relative aspect-video w-full overflow-hidden rounded-2xl border border-white/10",
-        "scene-grid"
+        "relative aspect-video w-full max-h-[280px] overflow-hidden rounded-xl border border-white/10",
+        "scene-grid text-[8px]"
       )}
       data-testid="canvas-scene"
     >
