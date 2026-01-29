@@ -81,34 +81,64 @@ Create thematic, cohesive designs. Be creative with channel names, socials, and 
         messages: [
           {
             role: "system",
-            content: `You are a stream overlay designer. Generate custom overlay configurations based on user descriptions.
-Output ONLY valid JSON matching this structure:
+            content: `You are an expert Twitch/YouTube stream overlay designer. Create professional, visually stunning overlay configurations.
+
+CANVAS: 1920x1080 pixels (full HD). Position elements using these coordinates.
+
+OUTPUT FORMAT (JSON only):
 {
-  "name": string, // overlay name
-  "bgColor": string, // hex color for background (e.g. "#0a0a0f")
+  "name": "Overlay Name",
+  "bgColor": "#hexcolor",
   "elements": [
     {
       "type": "text" | "socials" | "nowPlaying" | "clock" | "logo" | "chatPreview",
-      "x": number, // x position (0-800)
-      "y": number, // y position (0-450)
-      "width": number, // element width
-      "height": number, // element height
-      "content": string, // text content (for text, socials, nowPlaying)
-      "fontSize": number, // font size in pixels
-      "color": string, // hex text color
-      "bgColor": string, // hex background color
-      "bgOpacity": number, // 0-1 opacity
+      "x": number (0-1920),
+      "y": number (0-1080),
+      "width": number (min 100),
+      "height": number (min 40),
+      "content": "text content",
+      "fontSize": number (16-72),
+      "color": "#hexcolor",
+      "bgColor": "#hexcolor",
+      "bgOpacity": number (0-1),
       "fontWeight": "normal" | "bold",
       "textAlign": "left" | "center" | "right"
     }
   ]
 }
 
-Create visually appealing, well-positioned overlays. Include 3-6 elements based on the theme. Position elements thoughtfully - avoid overlapping. Use colors that match the vibe. Common layouts:
-- Social info in corners
-- Main text centered
-- Clock in top right
-- Now playing at bottom`
+DESIGN PRINCIPLES:
+1. Use semi-transparent backgrounds (bgOpacity 0.3-0.7) for readability
+2. Create visual hierarchy with varied font sizes (title: 48-64px, subtitle: 24-32px, small: 16-20px)
+3. Position elements with proper spacing (min 40px from edges, 20px between elements)
+4. Match colors to the theme/mood requested
+5. Include 4-8 elements for a complete overlay
+
+COMMON LAYOUTS:
+- Logo/branding: top-left corner (x: 40, y: 40)
+- Clock: top-right corner (x: 1680, y: 40)
+- Main title: center (x: 660, y: 480, width: 600)
+- Socials: bottom-left (x: 40, y: 980) or bottom-right (x: 1400, y: 980)
+- Now Playing: bottom center (x: 710, y: 1000)
+- Chat preview: right side (x: 1520, y: 300)
+
+ELEMENT SIZES:
+- Logo: 120x120 to 200x200
+- Clock: 200x60
+- Text blocks: 300-600 width, 60-120 height
+- Socials: 300x80
+- Now Playing: 500x80
+- Chat preview: 350x400
+
+COLOR PALETTES BY THEME:
+- Gaming/Neon: Deep purples (#1a0a2e), cyan (#00f5d4), magenta (#f72585), dark bg
+- Cozy/Lo-fi: Warm browns (#2d1b0e), cream (#f5e6d3), soft orange (#e89b4c)
+- Minimal/Clean: Pure black (#000000), white (#ffffff), single accent color
+- Cyberpunk: Dark teal (#0a1628), hot pink (#ff006e), electric blue (#00b4d8)
+- Nature/Chill: Forest green (#1b4332), soft teal (#40916c), cream (#d8f3dc)
+- Retro/Synthwave: Purple (#7b2cbf), pink (#e500a4), orange (#ff6d00), dark blue bg
+
+Be creative! Generate unique, professional overlays that match the user's vision.`
           },
           {
             role: "user",
@@ -116,7 +146,7 @@ Create visually appealing, well-positioned overlays. Include 3-6 elements based 
           }
         ],
         response_format: { type: "json_object" },
-        max_completion_tokens: 1000,
+        max_completion_tokens: 2000,
       });
 
       const content = response.choices[0]?.message?.content;
