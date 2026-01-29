@@ -407,7 +407,7 @@ export default function TwitchScenes() {
       setCfg(newConfig);
       setAiPrompt("");
       setAiJustGenerated(true);
-      setTimeout(() => setAiJustGenerated(false), 3000);
+      setTimeout(() => setAiJustGenerated(false), 10000);
       toast({
         title: "Scene generated!",
         description: "Check the preview — AI created a new scene based on your prompt.",
@@ -561,6 +561,15 @@ export default function TwitchScenes() {
                   )}
                 </Button>
               </div>
+
+              {aiJustGenerated && (
+                <div className="mt-4">
+                  <div className="text-xs font-medium text-emerald-400 mb-2">Generated Preview:</div>
+                  <div className="rounded-xl overflow-hidden border border-emerald-500/30">
+                    <SceneCanvas sceneId={sceneId} cfg={cfg} />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="glass rounded-3xl p-4" data-testid="panel-customize">
