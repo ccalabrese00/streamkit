@@ -521,64 +521,6 @@ export default function TwitchScenes() {
               </div>
             </div>
 
-            <div className="glass rounded-3xl p-4" data-testid="panel-ai-generator">
-              <div className="flex items-center gap-2">
-                <Wand2 className="h-4 w-4 text-white/70" />
-                <div
-                  className="text-sm font-semibold tracking-tight text-white/90"
-                  data-testid="text-ai-title"
-                >
-                  AI Scene Generator
-                </div>
-              </div>
-              <div className="mt-3 text-xs text-white/65" data-testid="text-ai-description">
-                Describe the vibe you want and let AI create a custom scene configuration.
-              </div>
-              <div className="mt-4 grid gap-3">
-                <Input
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !aiGenerating) {
-                      generateAIScene();
-                    }
-                  }}
-                  placeholder="cyberpunk hacker vibes, cozy coffee shop stream, retro 80s arcade..."
-                  className="bg-white/5 text-white/90"
-                  disabled={aiGenerating}
-                  data-testid="input-ai-prompt"
-                />
-                <Button
-                  variant="secondary"
-                  className="w-full gap-2"
-                  onClick={generateAIScene}
-                  disabled={!aiPrompt.trim() || aiGenerating}
-                  data-testid="button-ai-generate"
-                >
-                  {aiGenerating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="h-4 w-4" />
-                      Generate Scene
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {aiJustGenerated && (
-                <div className="mt-4">
-                  <div className="text-xs font-medium text-emerald-400 mb-2">Generated Preview:</div>
-                  <div className="rounded-xl overflow-hidden border border-emerald-500/30">
-                    <SceneCanvas sceneId={sceneId} cfg={cfg} />
-                  </div>
-                </div>
-              )}
-            </div>
-
             <div className="glass rounded-3xl p-4" data-testid="panel-customize">
               <div className="flex items-center justify-between">
                 <div
@@ -937,6 +879,43 @@ export default function TwitchScenes() {
                   })}
                 </div>
               )}
+            </div>
+
+            <div className="glass rounded-2xl p-3 md:col-span-2 lg:col-span-3" data-testid="panel-ai-generator">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-white/70 whitespace-nowrap">
+                  <Wand2 className="h-4 w-4" />
+                  AI
+                </div>
+                <Input
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !aiGenerating) {
+                      generateAIScene();
+                    }
+                  }}
+                  placeholder="Describe a vibe... cyberpunk, cozy cafe, retro arcade"
+                  className="bg-white/5 text-white/90 text-sm flex-1"
+                  disabled={aiGenerating}
+                  data-testid="input-ai-prompt"
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="gap-2 whitespace-nowrap"
+                  onClick={generateAIScene}
+                  disabled={!aiPrompt.trim() || aiGenerating}
+                  data-testid="button-ai-generate"
+                >
+                  {aiGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  Generate
+                </Button>
+              </div>
             </div>
         </div>
 
