@@ -202,5 +202,54 @@ Be creative! Generate unique, professional overlays that match the user's vision
     }
   });
 
+  app.post("/api/github/push", async (req, res) => {
+    try {
+      const { owner, repo, branch, files, message } = req.body;
+      const octokit = await getUncachableGitHubClient();
+
+      let baseSha: string | undefined;
+      try {
+        const { data: ref } = await octokit.git.getRef({ owner, repo, ref: `heads/${branch}` });
+        baseSha = ref.object.sha;
+      } catch (e: any) {
+        // branch doesn't exist yet
+      }
+
+      const blobs = [];
+      for (const f of files) {
+        const { data: blob } = await octokit.git.createBlob({
+          owner, repo,
+          content: f.content,
+          encoding: f.encoding || "base64",
+        });
+        blobs.push({ path: f.path, sha: blob.sha, mode: "100644" as const, type: "blob" as const });
+      }
+
+      const { data: tree } = await octokit.git.createTree({
+        owner, repo,
+        tree: blobs,
+        ...(baseSha ? { base_tree: baseSha } : {}),
+      });
+
+      const { data: commit } = await octokit.git.createCommit({
+        owner, repo,
+        message: message || "Push from Twitch Scene Maker",
+        tree: tree.sha,
+        ...(baseSha ? { parents: [baseSha] } : { parents: [] }),
+      });
+
+      if (baseSha) {
+        await octokit.git.updateRef({ owner, repo, ref: `heads/${branch}`, sha: commit.sha });
+      } else {
+        await octokit.git.createRef({ owner, repo, ref: `refs/heads/${branch}`, sha: commit.sha });
+      }
+
+      res.json({ success: true, commitSha: commit.sha, url: `https://github.com/${owner}/${repo}/commit/${commit.sha}` });
+    } catch (error: any) {
+      console.error("GitHub push error:", error);
+      res.status(500).json({ error: error.message || "Failed to push to GitHub" });
+    }
+  });
+
   return httpServer;
 }
