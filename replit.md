@@ -69,6 +69,12 @@ shared/           # Shared types and database schema
 - Embla Carousel for carousel functionality
 - Google Fonts (Outfit, IBM Plex Mono)
 
+### GitHub Integration
+- GitHub OAuth via Replit Connectors (`@octokit/rest`)
+- Client code: `server/github.ts`
+- API endpoints: `GET /api/github/repos`, `GET /api/github/user`
+- Permissions: read:org, read:project, read:user, repo, user:email
+
 ### Build & Development
 - Vite for frontend bundling
 - esbuild for server bundling (production)

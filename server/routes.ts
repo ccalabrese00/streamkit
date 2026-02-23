@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import OpenAI from "openai";
+import { getUncachableGitHubClient } from "./github";
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -159,6 +160,45 @@ Be creative! Generate unique, professional overlays that match the user's vision
     } catch (error) {
       console.error("AI overlay generation error:", error);
       res.status(500).json({ error: "Failed to generate overlay" });
+    }
+  });
+
+  app.get("/api/github/repos", async (_req, res) => {
+    try {
+      const octokit = await getUncachableGitHubClient();
+      const { data } = await octokit.repos.listForAuthenticatedUser({
+        sort: "updated",
+        per_page: 100,
+      });
+      res.json(data.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        full_name: r.full_name,
+        html_url: r.html_url,
+        description: r.description,
+        private: r.private,
+        default_branch: r.default_branch,
+        updated_at: r.updated_at,
+      })));
+    } catch (error: any) {
+      console.error("GitHub repos error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch repos" });
+    }
+  });
+
+  app.get("/api/github/user", async (_req, res) => {
+    try {
+      const octokit = await getUncachableGitHubClient();
+      const { data } = await octokit.users.getAuthenticated();
+      res.json({
+        login: data.login,
+        avatar_url: data.avatar_url,
+        name: data.name,
+        html_url: data.html_url,
+      });
+    } catch (error: any) {
+      console.error("GitHub user error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch user" });
     }
   });
 
