@@ -13,6 +13,7 @@ declare global {
       email: string;
       username: string;
       password: string;
+      role: string;
       createdAt: Date;
     }
   }
@@ -126,7 +127,7 @@ export function setupAuth(app: Express) {
         if (err) {
           return res.status(500).json({ error: "Login failed after registration" });
         }
-        return res.json({ id: user.id, email: user.email, username: user.username });
+        return res.json({ id: user.id, email: user.email, username: user.username, role: user.role });
       });
     } catch (err: any) {
       console.error("Registration error:", err);
@@ -151,7 +152,7 @@ export function setupAuth(app: Express) {
       if (!user) return res.status(401).json({ error: info?.message || "Invalid credentials" });
       req.login(user, (err) => {
         if (err) return next(err);
-        return res.json({ id: user.id, email: user.email, username: user.username });
+        return res.json({ id: user.id, email: user.email, username: user.username, role: user.role });
       });
     })(req, res, next);
   });
@@ -168,13 +169,23 @@ export function setupAuth(app: Express) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     const user = req.user!;
-    return res.json({ id: user.id, email: user.email, username: user.username });
+    return res.json({ id: user.id, email: user.email, username: user.username, role: user.role });
   });
 }
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
+  }
+  next();
+}
+
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  if (req.user!.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
   }
   next();
 }
