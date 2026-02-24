@@ -392,6 +392,12 @@ export default function TwitchScenes() {
   const [aiJustGenerated, setAiJustGenerated] = useState(false);
   const [savedOverlays, setSavedOverlays] = useState<CustomOverlay[]>([]);
 
+  const [showAddScene, setShowAddScene] = useState(false);
+  const [newSceneLabel, setNewSceneLabel] = useState("New Scene");
+  const [newSceneTitle, setNewSceneTitle] = useState("Custom Scene");
+  const [newSceneSubtitle, setNewSceneSubtitle] = useState("Your message here");
+  const [newSceneAccent, setNewSceneAccent] = useState<Accent>("purple");
+
   const editingScene = editingSceneId ? allScenes.find((s) => s.id === editingSceneId) : null;
 
   useEffect(() => {
@@ -442,14 +448,19 @@ export default function TwitchScenes() {
   function addCustomScene() {
     const newScene: SceneType = {
       id: `custom-${Date.now()}`,
-      label: "New Scene",
-      title: "Custom Scene",
-      subtitle: "Your message here",
-      accent: cfg.accent,
+      label: newSceneLabel.trim() || "New Scene",
+      title: newSceneTitle.trim() || "Custom Scene",
+      subtitle: newSceneSubtitle.trim() || "Your message here",
+      accent: newSceneAccent,
       isCustom: true,
     };
     setCustomScenes((prev) => [...prev, newScene]);
     setSceneId(newScene.id);
+    setShowAddScene(false);
+    setNewSceneLabel("New Scene");
+    setNewSceneTitle("Custom Scene");
+    setNewSceneSubtitle("Your message here");
+    setNewSceneAccent("purple");
     toast({ title: "Scene added" });
   }
 
@@ -589,12 +600,100 @@ export default function TwitchScenes() {
                   variant="secondary"
                   size="sm"
                   className="h-7 w-7 p-0"
-                  onClick={addCustomScene}
+                  onClick={() => setShowAddScene(!showAddScene)}
                   data-testid="button-add-scene"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className={cn("h-4 w-4 transition-transform", showAddScene && "rotate-45")} />
                 </Button>
               </div>
+
+              <AnimatePresence>
+                {showAddScene && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
+                      <div className="text-xs font-medium text-emerald-300 mb-2">New Scene</div>
+                      <div className="grid gap-2">
+                        <div>
+                          <Label className="text-white/60 text-[11px]">Label</Label>
+                          <Input
+                            value={newSceneLabel}
+                            onChange={(e) => setNewSceneLabel(e.target.value)}
+                            placeholder="e.g. Intermission"
+                            className="bg-white/5 text-white/90 text-xs h-7 mt-0.5"
+                            data-testid="input-new-scene-label"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-white/60 text-[11px]">Title</Label>
+                          <Input
+                            value={newSceneTitle}
+                            onChange={(e) => setNewSceneTitle(e.target.value)}
+                            placeholder="e.g. Taking a Break"
+                            className="bg-white/5 text-white/90 text-xs h-7 mt-0.5"
+                            data-testid="input-new-scene-title"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-white/60 text-[11px]">Subtitle</Label>
+                          <Input
+                            value={newSceneSubtitle}
+                            onChange={(e) => setNewSceneSubtitle(e.target.value)}
+                            placeholder="e.g. Hang tight, be back soon!"
+                            className="bg-white/5 text-white/90 text-xs h-7 mt-0.5"
+                            data-testid="input-new-scene-subtitle"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-white/60 text-[11px]">Accent Color</Label>
+                          <Select
+                            value={newSceneAccent}
+                            onValueChange={(v) => setNewSceneAccent(v as Accent)}
+                          >
+                            <SelectTrigger className="bg-white/5 text-white/90 text-xs h-7 mt-0.5" data-testid="select-new-scene-accent">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="purple">Purple</SelectItem>
+                              <SelectItem value="cyan">Cyan</SelectItem>
+                              <SelectItem value="pink">Pink</SelectItem>
+                              <SelectItem value="lime">Lime</SelectItem>
+                              <SelectItem value="amber">Amber</SelectItem>
+                              <SelectItem value="red">Red</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex gap-2 mt-1">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="flex-1 h-7 text-xs gap-1.5"
+                            onClick={addCustomScene}
+                            data-testid="button-confirm-add-scene"
+                          >
+                            <Plus className="h-3 w-3" />
+                            Add Scene
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => setShowAddScene(false)}
+                            data-testid="button-cancel-add-scene"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div className="mt-3 grid gap-1.5">
                 {allScenes.map((s) => {
                   const active = s.id === sceneId;
@@ -602,7 +701,7 @@ export default function TwitchScenes() {
                     <div
                       key={s.id}
                       className={cn(
-                        "group flex w-full items-center justify-between rounded-2xl px-4 py-3 transition",
+                        "group flex w-full items-center justify-between rounded-xl px-3 py-2 transition",
                         "border border-white/10 bg-white/5 hover:bg-white/7",
                         active && "bg-white/10"
                       )}
@@ -612,11 +711,11 @@ export default function TwitchScenes() {
                         className="flex-1 text-left"
                         data-testid={`button-scene-${s.id}`}
                       >
-                        <div className="text-sm font-semibold text-white/90">{s.label}</div>
-                        <div className="mt-0.5 font-mono text-xs text-white/55">1920×1080</div>
+                        <div className="text-xs font-semibold text-white/90">{s.label}</div>
+                        <div className="mt-0.5 font-mono text-[10px] text-white/55">1920×1080</div>
                       </button>
                       <div className="flex items-center gap-1">
-                        <div className={cn("h-2.5 w-2.5 rounded-full mr-1", accentDotClass(s.accent))} />
+                        <div className={cn("h-2 w-2 rounded-full mr-1", accentDotClass(s.accent))} />
                         <Button
                           variant="ghost"
                           size="sm"
