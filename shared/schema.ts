@@ -9,6 +9,19 @@ export const users = pgTable("users", {
   username: text("username").notNull(),
   password: text("password").notNull(),
   role: text("role").notNull().default("user"),
+  banned: boolean("banned").notNull().default(false),
+  banReason: text("ban_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const securityEvents = pgTable("security_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  type: text("type").notNull(),
+  severity: text("severity").notNull().default("medium"),
+  email: text("email"),
+  ip: text("ip"),
+  message: text("message").notNull(),
+  resolved: boolean("resolved").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -65,3 +78,4 @@ export type Scene = typeof scenes.$inferSelect;
 export type InsertScene = z.infer<typeof insertSceneSchema>;
 export type Alert = typeof alerts.$inferSelect;
 export type InsertAlert = z.infer<typeof insertAlertSchema>;
+export type SecurityEvent = typeof securityEvents.$inferSelect;

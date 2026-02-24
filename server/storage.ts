@@ -3,15 +3,26 @@ import {
   type Overlay, type InsertOverlay,
   type Scene, type InsertScene,
   type Alert, type InsertAlert,
-  users, overlays, scenes, alerts,
+  type SecurityEvent,
+  users, overlays, scenes, alerts, securityEvents,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc, and, gte, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+
+  getAllUsers(): Promise<User[]>;
+  banUser(id: string, reason: string): Promise<User | undefined>;
+  unbanUser(id: string): Promise<User | undefined>;
+  deleteUser(id: string): Promise<void>;
+
+  getSecurityEvents(limit?: number): Promise<SecurityEvent[]>;
+  createSecurityEvent(event: { type: string; severity: string; email?: string; ip?: string; message: string }): Promise<SecurityEvent>;
+  resolveSecurityEvent(id: string): Promise<SecurityEvent | undefined>;
+  getRecentFailedLogins(email: string, minutes: number): Promise<number>;
 
   getOverlays(userId: string): Promise<Overlay[]>;
   getOverlay(id: string): Promise<Overlay | undefined>;
@@ -46,6 +57,53 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async banUser(id: string, reason: string): Promise<User | undefined> {
+    const [user] = await db.update(users).set({ banned: true, banReason: reason }).where(eq(users.id, id)).returning();
+    return user;
+  }
+
+  async unbanUser(id: string): Promise<User | undefined> {
+    const [user] = await db.update(users).set({ banned: false, banReason: null }).where(eq(users.id, id)).returning();
+    return user;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(overlays).where(eq(overlays.userId, id));
+    await db.delete(scenes).where(eq(scenes.userId, id));
+    await db.delete(alerts).where(eq(alerts.userId, id));
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  async getSecurityEvents(limit = 100): Promise<SecurityEvent[]> {
+    return db.select().from(securityEvents).orderBy(desc(securityEvents.createdAt)).limit(limit);
+  }
+
+  async createSecurityEvent(event: { type: string; severity: string; email?: string; ip?: string; message: string }): Promise<SecurityEvent> {
+    const [created] = await db.insert(securityEvents).values(event).returning();
+    return created;
+  }
+
+  async resolveSecurityEvent(id: string): Promise<SecurityEvent | undefined> {
+    const [updated] = await db.update(securityEvents).set({ resolved: true }).where(eq(securityEvents.id, id)).returning();
+    return updated;
+  }
+
+  async getRecentFailedLogins(email: string, minutes: number): Promise<number> {
+    const cutoff = new Date(Date.now() - minutes * 60 * 1000);
+    const results = await db.select({ count: sql<number>`count(*)` })
+      .from(securityEvents)
+      .where(and(
+        eq(securityEvents.type, "failed_login"),
+        eq(securityEvents.email, email),
+        gte(securityEvents.createdAt, cutoff)
+      ));
+    return Number(results[0]?.count || 0);
   }
 
   async getOverlays(userId: string): Promise<Overlay[]> {

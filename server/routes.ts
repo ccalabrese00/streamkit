@@ -1,12 +1,84 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { requireAuth } from "./auth";
+import { requireAuth, requireAdmin } from "./auth";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    const allUsers = await storage.getAllUsers();
+    const safeUsers = allUsers.map(u => ({
+      id: u.id,
+      email: u.email,
+      username: u.username,
+      role: u.role,
+      banned: u.banned,
+      banReason: u.banReason,
+      createdAt: u.createdAt,
+    }));
+    res.json(safeUsers);
+  });
+
+  app.post("/api/admin/users/:id/ban", requireAdmin, async (req, res) => {
+    const { reason } = req.body;
+    if (!reason || !String(reason).trim()) {
+      return res.status(400).json({ error: "Ban reason is required" });
+    }
+    if (req.params.id === req.user!.id) {
+      return res.status(400).json({ error: "You cannot ban yourself" });
+    }
+    const user = await storage.banUser(req.params.id, String(reason).trim());
+    if (!user) return res.status(404).json({ error: "User not found" });
+    await storage.createSecurityEvent({
+      type: "user_banned",
+      severity: "medium",
+      email: user.email,
+      message: `Admin ${req.user!.username} banned user ${user.username}: ${reason}`,
+    });
+    res.json({ id: user.id, email: user.email, username: user.username, banned: user.banned, banReason: user.banReason });
+  });
+
+  app.post("/api/admin/users/:id/unban", requireAdmin, async (req, res) => {
+    const user = await storage.unbanUser(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    await storage.createSecurityEvent({
+      type: "user_unbanned",
+      severity: "low",
+      email: user.email,
+      message: `Admin ${req.user!.username} unbanned user ${user.username}`,
+    });
+    res.json({ id: user.id, email: user.email, username: user.username, banned: user.banned });
+  });
+
+  app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    if (req.params.id === req.user!.id) {
+      return res.status(400).json({ error: "You cannot delete yourself" });
+    }
+    const user = await storage.getUser(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    await storage.createSecurityEvent({
+      type: "user_deleted",
+      severity: "high",
+      email: user.email,
+      message: `Admin ${req.user!.username} deleted user ${user.username} (${user.email})`,
+    });
+    await storage.deleteUser(req.params.id);
+    res.json({ ok: true });
+  });
+
+  app.get("/api/admin/security-events", requireAdmin, async (req, res) => {
+    const events = await storage.getSecurityEvents(200);
+    res.json(events);
+  });
+
+  app.post("/api/admin/security-events/:id/resolve", requireAdmin, async (req, res) => {
+    const event = await storage.resolveSecurityEvent(req.params.id);
+    if (!event) return res.status(404).json({ error: "Event not found" });
+    res.json(event);
+  });
 
   app.get("/api/overlays", requireAuth, async (req, res) => {
     const list = await storage.getOverlays(req.user!.id);

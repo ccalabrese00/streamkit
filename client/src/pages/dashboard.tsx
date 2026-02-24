@@ -10,25 +10,30 @@ import {
   LogOut,
   Menu,
   X,
+  ShieldCheck,
 } from "lucide-react";
 import OverlaysPanel from "./panels/overlays-panel";
 import ScenesPanel from "./panels/scenes-panel";
 import AlertsPanel from "./panels/alerts-panel";
 import SettingsPanel from "./panels/settings-panel";
+import AdminPanel from "./panels/admin-panel";
 
-type Tab = "overlays" | "scenes" | "alerts" | "settings";
+type Tab = "overlays" | "scenes" | "alerts" | "settings" | "admin";
 
-const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+const baseTabs: { id: Tab; label: string; icon: React.ReactNode; adminOnly?: boolean }[] = [
   { id: "overlays", label: "Overlays", icon: <Layers className="h-4 w-4" /> },
   { id: "scenes", label: "Scenes", icon: <Monitor className="h-4 w-4" /> },
   { id: "alerts", label: "Alerts", icon: <Bell className="h-4 w-4" /> },
   { id: "settings", label: "Settings", icon: <Settings className="h-4 w-4" /> },
+  { id: "admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" />, adminOnly: true },
 ];
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("overlays");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const tabs = baseTabs.filter((t) => !t.adminOnly || user?.role === "admin");
 
   return (
     <div className="min-h-screen bg-[#0a0a1a] flex">
@@ -116,6 +121,7 @@ export default function Dashboard() {
           {activeTab === "scenes" && <ScenesPanel />}
           {activeTab === "alerts" && <AlertsPanel />}
           {activeTab === "settings" && <SettingsPanel />}
+          {activeTab === "admin" && <AdminPanel />}
         </div>
       </main>
     </div>

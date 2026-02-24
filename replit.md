@@ -24,19 +24,22 @@ Pages:
   - Scenes panel — create/edit/delete scenes
   - Alerts panel — create/edit/delete alerts (follower, donation, subscriber)
   - Settings panel — account info and logout
+  - Admin panel (admin-only) — user management (ban/unban/delete) and security alerts
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express 5
 - **Language**: TypeScript compiled with tsx
 - **API Pattern**: RESTful JSON endpoints under `/api/*`
 - **Authentication**: Passport.js with local strategy (email/password), express-session
+- **Authorization**: Role-based (user/admin) with requireAuth and requireAdmin middleware
 - **Password Hashing**: bcryptjs
+- **Security**: Failed login tracking, brute force detection, password spray alerts, banned user blocking
 
 ### Data Storage
 - **Database**: PostgreSQL with Drizzle ORM
 - **Schema Location**: `shared/schema.ts`
 - **Migrations**: Drizzle Kit (`drizzle-kit push`)
-- **Tables**: users, overlays, scenes, alerts
+- **Tables**: users (with role/banned fields), overlays, scenes, alerts, security_events
 
 ### Project Structure
 ```

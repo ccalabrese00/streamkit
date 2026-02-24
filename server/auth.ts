@@ -37,17 +37,63 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(
-      { usernameField: "email" },
-      async (email, password, done) => {
+      { usernameField: "email", passReqToCallback: true },
+      async (req: Request, email: string, password: string, done: any) => {
         try {
+          const ip = req.ip || req.headers["x-forwarded-for"] as string || "unknown";
+
+          const recentFailures = await storage.getRecentFailedLogins(email, 15);
+          if (recentFailures >= 10) {
+            await storage.createSecurityEvent({
+              type: "password_spray",
+              severity: "high",
+              email,
+              ip,
+              message: `Blocked login: ${recentFailures} failed attempts in 15 min for ${email}`,
+            });
+            return done(null, false, { message: "Too many failed attempts. Try again later." });
+          }
+
           const user = await storage.getUserByEmail(email);
           if (!user) {
+            await storage.createSecurityEvent({
+              type: "failed_login",
+              severity: "low",
+              email,
+              ip,
+              message: `Failed login for unknown email: ${email}`,
+            });
             return done(null, false, { message: "Invalid email or password" });
           }
+
+          if (user.banned) {
+            return done(null, false, { message: "This account has been suspended" });
+          }
+
           const valid = await bcrypt.compare(password, user.password);
           if (!valid) {
+            await storage.createSecurityEvent({
+              type: "failed_login",
+              severity: "medium",
+              email,
+              ip,
+              message: `Failed password for user: ${user.username} (${email})`,
+            });
+
+            const totalRecent = recentFailures + 1;
+            if (totalRecent >= 5) {
+              await storage.createSecurityEvent({
+                type: "brute_force",
+                severity: "high",
+                email,
+                ip,
+                message: `${totalRecent} failed login attempts in 15 min for ${email} from IP ${ip}`,
+              });
+            }
+
             return done(null, false, { message: "Invalid email or password" });
           }
+
           return done(null, user);
         } catch (err) {
           return done(err);
