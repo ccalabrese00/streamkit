@@ -544,7 +544,7 @@ export default function TwitchScenes() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 md:px-6">
+      <div className="mx-auto w-full max-w-5xl px-4 py-6 md:px-6">
         <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <div
@@ -555,19 +555,19 @@ export default function TwitchScenes() {
               Twitch Scenes
             </div>
             <h2
-              className="mt-4 text-balance text-3xl font-semibold tracking-tight text-white md:text-4xl"
+              className="mt-2 text-balance text-2xl font-semibold tracking-tight text-white md:text-3xl"
               data-testid="text-heading"
             >
               Animated scenes for your stream
             </h2>
             <p
-              className="mt-3 max-w-[66ch] text-pretty text-sm text-white/65 md:text-base"
+              className="mt-1.5 max-w-[66ch] text-pretty text-xs text-white/65 md:text-sm"
               data-testid="text-description"
             >
               Customize your channel name, handle, ticker words, and accent color — then save presets and copy an OBS-ready link.
             </p>
             <Link href="/overlay/builder">
-              <Button variant="secondary" className="mt-4 gap-2" data-testid="button-overlay-builder">
+              <Button variant="secondary" size="sm" className="mt-3 gap-2" data-testid="button-overlay-builder">
                 <Layers className="h-4 w-4" />
                 Custom Overlay Builder
               </Button>
@@ -576,8 +576,8 @@ export default function TwitchScenes() {
 
           </header>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <div className="glass rounded-3xl p-4">
+        <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="glass rounded-2xl p-3">
               <div className="flex items-center justify-between">
                 <div
                   className="text-sm font-semibold tracking-tight text-white/90"
@@ -595,7 +595,7 @@ export default function TwitchScenes() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="mt-4 grid gap-2">
+              <div className="mt-3 grid gap-1.5">
                 {allScenes.map((s) => {
                   const active = s.id === sceneId;
                   return (
@@ -650,8 +650,8 @@ export default function TwitchScenes() {
               </div>
 
               {editingScene && (
-                <div className="mt-4 rounded-2xl border border-purple-500/30 bg-purple-500/10 p-4">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="mt-3 rounded-xl border border-purple-500/30 bg-purple-500/10 p-3">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="text-xs font-medium text-purple-300">Edit Scene</div>
                     <div className="flex gap-2">
                       {!editingScene.isCustom && (
@@ -679,41 +679,41 @@ export default function TwitchScenes() {
                       </Button>
                     </div>
                   </div>
-                  <div className="grid gap-3">
+                  <div className="grid gap-2">
                     <div>
-                      <Label className="text-white/60 text-xs">Label</Label>
+                      <Label className="text-white/60 text-[11px]">Label</Label>
                       <Input
                         value={editingScene.label}
                         onChange={(e) => updateScene(editingScene.id, { label: e.target.value })}
-                        className="bg-white/5 text-white/90 text-sm h-8 mt-1"
+                        className="bg-white/5 text-white/90 text-xs h-7 mt-0.5"
                         data-testid="input-scene-label"
                       />
                     </div>
                     <div>
-                      <Label className="text-white/60 text-xs">Title</Label>
+                      <Label className="text-white/60 text-[11px]">Title</Label>
                       <Input
                         value={editingScene.title}
                         onChange={(e) => updateScene(editingScene.id, { title: e.target.value })}
-                        className="bg-white/5 text-white/90 text-sm h-8 mt-1"
+                        className="bg-white/5 text-white/90 text-xs h-7 mt-0.5"
                         data-testid="input-scene-title"
                       />
                     </div>
                     <div>
-                      <Label className="text-white/60 text-xs">Subtitle</Label>
+                      <Label className="text-white/60 text-[11px]">Subtitle</Label>
                       <Input
                         value={editingScene.subtitle}
                         onChange={(e) => updateScene(editingScene.id, { subtitle: e.target.value })}
-                        className="bg-white/5 text-white/90 text-sm h-8 mt-1"
+                        className="bg-white/5 text-white/90 text-xs h-7 mt-0.5"
                         data-testid="input-scene-subtitle"
                       />
                     </div>
                     <div>
-                      <Label className="text-white/60 text-xs">Accent Color</Label>
+                      <Label className="text-white/60 text-[11px]">Accent Color</Label>
                       <Select
                         value={editingScene.accent}
                         onValueChange={(v) => updateScene(editingScene.id, { accent: v as Accent })}
                       >
-                        <SelectTrigger className="bg-white/5 text-white/90 text-sm h-8 mt-1" data-testid="select-scene-accent">
+                        <SelectTrigger className="bg-white/5 text-white/90 text-xs h-7 mt-0.5" data-testid="select-scene-accent">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -834,18 +834,18 @@ export default function TwitchScenes() {
                 </div>
               )}
 
-              <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
-                <div className="text-xs font-medium text-white/75" data-testid="text-tip-title">
+              <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-3">
+                <div className="text-[11px] font-medium text-white/75" data-testid="text-tip-title">
                   Tip
                 </div>
-                <div className="mt-2 text-sm text-white/65" data-testid="text-tip">
+                <div className="mt-1 text-xs text-white/65" data-testid="text-tip">
                   In OBS: add a Browser Source → set Width 1920, Height 1080 → paste the link below.
                 </div>
               </div>
             </div>
 
-            <div className="glass rounded-3xl p-4 lg:col-span-2" data-testid="panel-customize">
-              <div className="flex items-center justify-between mb-3">
+            <div className="glass rounded-2xl p-3 lg:col-span-2" data-testid="panel-customize">
+              <div className="flex items-center justify-between mb-2">
                 <div
                   className="text-sm font-semibold tracking-tight text-white/90"
                   data-testid="text-customize-title"
@@ -862,117 +862,117 @@ export default function TwitchScenes() {
                 </Button>
               </div>
 
-              <div className="grid gap-3">
-                <div className="grid gap-1">
-                  <Label className="text-white/70 text-xs" htmlFor="channel" data-testid="label-channel">
+              <div className="grid gap-2">
+                <div className="grid gap-0.5">
+                  <Label className="text-white/70 text-[11px]" htmlFor="channel" data-testid="label-channel">
                     Channel name
                   </Label>
                   <Input
                     id="channel"
                     value={cfg.channel}
                     onChange={(e) => setCfg((p) => ({ ...p, channel: e.target.value }))}
-                    className="bg-white/5 text-white/90 h-8 text-sm"
+                    className="bg-white/5 text-white/90 h-7 text-xs"
                     data-testid="input-channel"
                   />
                 </div>
 
-                <div className="grid gap-1">
-                  <Label className="text-white/70 text-xs" data-testid="label-socials">
+                <div className="grid gap-0.5">
+                  <Label className="text-white/70 text-[11px]" data-testid="label-socials">
                     Social handles
                   </Label>
-                  <div className="grid grid-cols-3 gap-1.5">
+                  <div className="grid grid-cols-3 gap-1">
                     <Input
                       placeholder="Twitch"
                       value={cfg.socials.twitch}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, twitch: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-xs h-8"
+                      className="bg-white/5 text-white/90 text-[11px] h-7"
                       data-testid="input-twitch"
                     />
                     <Input
                       placeholder="YouTube"
                       value={cfg.socials.youtube}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, youtube: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-xs h-8"
+                      className="bg-white/5 text-white/90 text-[11px] h-7"
                       data-testid="input-youtube"
                     />
                     <Input
                       placeholder="Instagram"
                       value={cfg.socials.instagram}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, instagram: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-xs h-8"
+                      className="bg-white/5 text-white/90 text-[11px] h-7"
                       data-testid="input-instagram"
                     />
                     <Input
                       placeholder="X"
                       value={cfg.socials.x}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, x: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-xs h-8"
+                      className="bg-white/5 text-white/90 text-[11px] h-7"
                       data-testid="input-x"
                     />
                     <Input
                       placeholder="TikTok"
                       value={cfg.socials.tiktok}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, tiktok: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-xs h-8"
+                      className="bg-white/5 text-white/90 text-[11px] h-7"
                       data-testid="input-tiktok"
                     />
                     <Input
                       placeholder="Discord"
                       value={cfg.socials.discord}
                       onChange={(e) => setCfg((p) => ({ ...p, socials: { ...p.socials, discord: e.target.value } }))}
-                      className="bg-white/5 text-white/90 text-xs h-8"
+                      className="bg-white/5 text-white/90 text-[11px] h-7"
                       data-testid="input-discord"
                     />
                   </div>
                 </div>
 
-                <div className="grid gap-1">
-                  <Label className="text-white/70 text-xs" htmlFor="nowPlaying" data-testid="label-nowplaying">
+                <div className="grid gap-0.5">
+                  <Label className="text-white/70 text-[11px]" htmlFor="nowPlaying" data-testid="label-nowplaying">
                     Now playing
                   </Label>
                   <Input
                     id="nowPlaying"
                     value={cfg.nowPlaying}
                     onChange={(e) => setCfg((p) => ({ ...p, nowPlaying: e.target.value }))}
-                    className="bg-white/5 text-white/90 h-8 text-sm"
+                    className="bg-white/5 text-white/90 h-7 text-xs"
                     data-testid="input-nowplaying"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="grid gap-1">
-                    <Label className="text-white/70 text-xs" htmlFor="labelLeft" data-testid="label-ticker-left">
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid gap-0.5">
+                    <Label className="text-white/70 text-[11px]" htmlFor="labelLeft" data-testid="label-ticker-left">
                       Ticker 1
                     </Label>
                     <Input
                       id="labelLeft"
                       value={cfg.labelLeft}
                       onChange={(e) => setCfg((p) => ({ ...p, labelLeft: e.target.value }))}
-                      className="bg-white/5 text-white/90 h-8 text-sm"
+                      className="bg-white/5 text-white/90 h-7 text-xs"
                       data-testid="input-ticker-left"
                     />
                   </div>
-                  <div className="grid gap-1">
-                    <Label className="text-white/70 text-xs" htmlFor="labelRight" data-testid="label-ticker-right">
+                  <div className="grid gap-0.5">
+                    <Label className="text-white/70 text-[11px]" htmlFor="labelRight" data-testid="label-ticker-right">
                       Ticker 2
                     </Label>
                     <Input
                       id="labelRight"
                       value={cfg.labelRight}
                       onChange={(e) => setCfg((p) => ({ ...p, labelRight: e.target.value }))}
-                      className="bg-white/5 text-white/90 h-8 text-sm"
+                      className="bg-white/5 text-white/90 h-7 text-xs"
                       data-testid="input-ticker-right"
                     />
                   </div>
                 </div>
 
-                <div className="grid gap-2">
-                  <Label className="text-white/70 text-xs" data-testid="label-accent">Accent</Label>
+                <div className="grid gap-0.5">
+                  <Label className="text-white/70 text-[11px]" data-testid="label-accent">Accent</Label>
                     <Select
                       value={cfg.accent}
                       onValueChange={(v) => setCfg((p) => ({ ...p, accent: v as Accent }))}
                     >
-                      <SelectTrigger className="bg-white/5 text-white/90 h-8 text-sm" data-testid="select-accent">
+                      <SelectTrigger className="bg-white/5 text-white/90 h-7 text-xs" data-testid="select-accent">
                         <SelectValue placeholder="Color" />
                       </SelectTrigger>
                       <SelectContent data-testid="select-accent-content">
@@ -986,31 +986,32 @@ export default function TwitchScenes() {
                     </Select>
                 </div>
 
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5">
                   <Switch
                     checked={cfg.showTime}
                     onCheckedChange={(v) => setCfg((p) => ({ ...p, showTime: v }))}
                     data-testid="switch-showtime"
                   />
-                  <div className="text-xs text-white/70" data-testid="text-toggle-time-title">
+                  <div className="text-[11px] text-white/70" data-testid="text-toggle-time-title">
                     Show clock
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-                  <div className="text-xs font-medium text-white/75" data-testid="text-link-title">
+                <div className="rounded-xl border border-white/10 bg-black/25 p-3">
+                  <div className="text-[11px] font-medium text-white/75" data-testid="text-link-title">
                     OBS link
                   </div>
-                  <div className="mt-2 flex items-start gap-2">
+                  <div className="mt-1.5 flex items-start gap-2">
                     <div
-                      className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-[12px] text-white/75"
+                      className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 font-mono text-[11px] text-white/75 break-all"
                       data-testid="text-obs-link"
                     >
                       {sceneUrl}
                     </div>
                     <Button
                       variant="secondary"
-                      className="gap-2"
+                      size="sm"
+                      className="gap-1.5"
                       onClick={async () => {
                         await copyText(window.location.origin + sceneUrl);
                         setCopied(true);
@@ -1018,20 +1019,20 @@ export default function TwitchScenes() {
                       }}
                       data-testid="button-copy-link"
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-3.5 w-3.5" />
                       {copied ? "Copied" : "Copy"}
                     </Button>
                   </div>
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-2 flex items-center justify-between">
                     <a
                       href={sceneUrl}
-                      className="inline-flex items-center gap-2 text-sm font-medium text-white/70 underline decoration-white/20 underline-offset-4 hover:text-white"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-white/70 underline decoration-white/20 underline-offset-4 hover:text-white"
                       data-testid="link-open-fullscreen"
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      <ExternalLink className="h-3.5 w-3.5" />
                       Open full-screen
                     </a>
-                    <div className="text-xs text-white/45" data-testid="text-link-hint">
+                    <div className="text-[11px] text-white/45" data-testid="text-link-hint">
                       Anyone with this link gets your settings.
                     </div>
                   </div>
@@ -1039,26 +1040,27 @@ export default function TwitchScenes() {
               </div>
             </div>
 
-            <div className="glass rounded-3xl p-4" data-testid="panel-presets">
-              <div className="flex items-center justify-between gap-3">
+            <div className="glass rounded-2xl p-3" data-testid="panel-presets">
+              <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-semibold tracking-tight text-white/90" data-testid="text-presets-title">
                   Presets
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <Input
                     value={presetName}
                     onChange={(e) => setPresetName(e.target.value)}
                     placeholder="Preset name"
-                    className="h-9 bg-white/5 text-white/90"
+                    className="h-7 bg-white/5 text-white/90 text-xs"
                     data-testid="input-preset-name"
                   />
                   <Button
                     variant="secondary"
-                    className="gap-2"
+                    size="sm"
+                    className="gap-1.5"
                     onClick={saveNewPreset}
                     data-testid="button-save-preset"
                   >
-                    <BookmarkPlus className="h-4 w-4" />
+                    <BookmarkPlus className="h-3.5 w-3.5" />
                     Save
                   </Button>
                 </div>
@@ -1066,19 +1068,19 @@ export default function TwitchScenes() {
 
               {presets.length === 0 ? (
                 <div
-                  className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/65"
+                  className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/65"
                   data-testid="text-presets-empty"
                 >
                   No presets yet. Create one to quickly switch between different looks.
                 </div>
               ) : (
-                <div className="mt-4 grid gap-2" data-testid="list-presets">
+                <div className="mt-3 grid gap-1.5" data-testid="list-presets">
                   {presets.map((p) => {
                     const isEditing = editingId === p.id;
                     return (
                       <div
                         key={p.id}
-                        className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-3"
+                        className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-2.5 py-2"
                         data-testid={`row-preset-${p.id}`}
                       >
                         <div className="min-w-0 flex-1">
@@ -1113,10 +1115,11 @@ export default function TwitchScenes() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <Button
                             variant="secondary"
-                            className="h-9 px-3"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
                             onClick={() => applyPreset(p)}
                             data-testid={`button-preset-load-${p.id}`}
                           >
@@ -1125,7 +1128,8 @@ export default function TwitchScenes() {
 
                           <Button
                             variant="secondary"
-                            className="h-9 px-3"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
                             onClick={() => overwritePresetConfig(p.id)}
                             data-testid={`button-preset-overwrite-${p.id}`}
                           >
@@ -1134,7 +1138,8 @@ export default function TwitchScenes() {
 
                           <Button
                             variant="secondary"
-                            className="h-9 w-9 p-0"
+                            size="sm"
+                            className="h-7 w-7 p-0"
                             onClick={() => {
                               if (isEditing) {
                                 setEditingId(null);
@@ -1147,20 +1152,21 @@ export default function TwitchScenes() {
                             aria-label={isEditing ? "Done" : "Rename"}
                           >
                             {isEditing ? (
-                              <Check className="h-4 w-4" />
+                              <Check className="h-3.5 w-3.5" />
                             ) : (
-                              <Pencil className="h-4 w-4" />
+                              <Pencil className="h-3.5 w-3.5" />
                             )}
                           </Button>
 
                           <Button
                             variant="secondary"
-                            className="h-9 w-9 p-0"
+                            size="sm"
+                            className="h-7 w-7 p-0"
                             onClick={() => deletePreset(p.id)}
                             data-testid={`button-preset-delete-${p.id}`}
                             aria-label="Delete"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </div>
@@ -1170,10 +1176,10 @@ export default function TwitchScenes() {
               )}
             </div>
 
-            <div className="glass rounded-2xl p-3 md:col-span-2 lg:col-span-3" data-testid="panel-ai-generator">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-white/70 whitespace-nowrap">
-                  <Wand2 className="h-4 w-4" />
+            <div className="glass rounded-xl p-2.5 md:col-span-2 lg:col-span-3" data-testid="panel-ai-generator">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-white/70 whitespace-nowrap">
+                  <Wand2 className="h-3.5 w-3.5" />
                   AI
                 </div>
                 <Input
@@ -1185,22 +1191,22 @@ export default function TwitchScenes() {
                     }
                   }}
                   placeholder="Describe a vibe... cyberpunk, cozy cafe, retro arcade"
-                  className="bg-white/5 text-white/90 text-sm flex-1"
+                  className="bg-white/5 text-white/90 text-xs h-7 flex-1"
                   disabled={aiGenerating}
                   data-testid="input-ai-prompt"
                 />
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="gap-2 whitespace-nowrap"
+                  className="gap-1.5 whitespace-nowrap h-7 text-xs"
                   onClick={generateAIScene}
                   disabled={!aiPrompt.trim() || aiGenerating}
                   data-testid="button-ai-generate"
                 >
                   {aiGenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <Wand2 className="h-4 w-4" />
+                    <Wand2 className="h-3.5 w-3.5" />
                   )}
                   Generate
                 </Button>
@@ -1208,8 +1214,8 @@ export default function TwitchScenes() {
             </div>
         </div>
 
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mt-5">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="text-sm font-semibold text-white/90" data-testid="text-preview-title">
                 Preview
@@ -1263,7 +1269,7 @@ export default function TwitchScenes() {
           </div>
         </div>
 
-        <div className="mt-10 text-xs text-white/45" data-testid="text-footer">
+        <div className="mt-6 text-xs text-white/45" data-testid="text-footer">
           Publish this project and share the link — anyone can customize their own OBS URL.
         </div>
       </div>
