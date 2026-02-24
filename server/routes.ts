@@ -1,254 +1,95 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import OpenAI from "openai";
-import { getUncachableGitHubClient } from "./github";
-
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
+import { requireAuth } from "./auth";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  app.post("/api/generate-scene", async (req, res) => {
-    try {
-      const { prompt } = req.body;
 
-      if (!prompt || typeof prompt !== "string") {
-        return res.status(400).json({ error: "Prompt is required" });
-      }
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-5.2",
-        messages: [
-          {
-            role: "system",
-            content: `You are a Twitch scene designer. Generate scene configurations based on user descriptions.
-Output ONLY valid JSON matching this TypeScript type:
-{
-  channel: string; // stream channel name
-  socials: {
-    twitch: string; // twitch username (without twitch.tv/)
-    youtube: string; // youtube handle (without @)
-    instagram: string; // instagram handle (without @)
-    x: string; // X/Twitter handle (without @)
-    tiktok: string; // tiktok handle (without @)
-    discord: string; // discord server invite or name
-  };
-  nowPlaying: string; // music/game ticker text
-  labelLeft: string; // left footer label (usually "FOLLOW")
-  labelRight: string; // right footer label (usually "SUBSCRIBE")
-  accent: "purple" | "cyan" | "pink" | "lime" | "amber" | "red"; // theme color
-  showTime: boolean; // whether to show current time
-}
-
-Create thematic, cohesive designs. Be creative with channel names, socials, and ticker text that match the vibe. Fill in relevant social handles based on the theme.`
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 500,
-      });
-
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error("No response from AI");
-      }
-
-      const sceneConfig = JSON.parse(content);
-      res.json(sceneConfig);
-    } catch (error) {
-      console.error("AI generation error:", error);
-      res.status(500).json({ error: "Failed to generate scene" });
-    }
+  app.get("/api/overlays", requireAuth, async (req, res) => {
+    const list = await storage.getOverlays(req.user!.id);
+    res.json(list);
   });
 
-  app.post("/api/generate-overlay", async (req, res) => {
-    try {
-      const { prompt } = req.body;
-
-      if (!prompt || typeof prompt !== "string") {
-        return res.status(400).json({ error: "Prompt is required" });
-      }
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-5.2",
-        messages: [
-          {
-            role: "system",
-            content: `You are an expert Twitch/YouTube stream overlay designer. Create professional, visually stunning overlay configurations.
-
-CANVAS: 1920x1080 pixels (full HD). Position elements using these coordinates.
-
-OUTPUT FORMAT (JSON only):
-{
-  "name": "Overlay Name",
-  "bgColor": "#hexcolor",
-  "elements": [
-    {
-      "type": "text" | "socials" | "nowPlaying" | "clock" | "logo" | "chatPreview",
-      "x": number (0-1920),
-      "y": number (0-1080),
-      "width": number (min 100),
-      "height": number (min 40),
-      "content": "text content",
-      "fontSize": number (16-72),
-      "color": "#hexcolor",
-      "bgColor": "#hexcolor",
-      "bgOpacity": number (0-1),
-      "fontWeight": "normal" | "bold",
-      "textAlign": "left" | "center" | "right"
-    }
-  ]
-}
-
-DESIGN PRINCIPLES:
-1. Use semi-transparent backgrounds (bgOpacity 0.3-0.7) for readability
-2. Create visual hierarchy with varied font sizes (title: 48-64px, subtitle: 24-32px, small: 16-20px)
-3. Position elements with proper spacing (min 40px from edges, 20px between elements)
-4. Match colors to the theme/mood requested
-5. Include 4-8 elements for a complete overlay
-
-COMMON LAYOUTS:
-- Logo/branding: top-left corner (x: 40, y: 40)
-- Clock: top-right corner (x: 1680, y: 40)
-- Main title: center (x: 660, y: 480, width: 600)
-- Socials: bottom-left (x: 40, y: 980) or bottom-right (x: 1400, y: 980)
-- Now Playing: bottom center (x: 710, y: 1000)
-- Chat preview: right side (x: 1520, y: 300)
-
-ELEMENT SIZES:
-- Logo: 120x120 to 200x200
-- Clock: 200x60
-- Text blocks: 300-600 width, 60-120 height
-- Socials: 300x80
-- Now Playing: 500x80
-- Chat preview: 350x400
-
-COLOR PALETTES BY THEME:
-- Gaming/Neon: Deep purples (#1a0a2e), cyan (#00f5d4), magenta (#f72585), dark bg
-- Cozy/Lo-fi: Warm browns (#2d1b0e), cream (#f5e6d3), soft orange (#e89b4c)
-- Minimal/Clean: Pure black (#000000), white (#ffffff), single accent color
-- Cyberpunk: Dark teal (#0a1628), hot pink (#ff006e), electric blue (#00b4d8)
-- Nature/Chill: Forest green (#1b4332), soft teal (#40916c), cream (#d8f3dc)
-- Retro/Synthwave: Purple (#7b2cbf), pink (#e500a4), orange (#ff6d00), dark blue bg
-
-Be creative! Generate unique, professional overlays that match the user's vision.`
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        response_format: { type: "json_object" },
-        max_completion_tokens: 2000,
-      });
-
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error("No response from AI");
-      }
-
-      const overlayConfig = JSON.parse(content);
-      res.json(overlayConfig);
-    } catch (error) {
-      console.error("AI overlay generation error:", error);
-      res.status(500).json({ error: "Failed to generate overlay" });
-    }
+  app.post("/api/overlays", requireAuth, async (req, res) => {
+    const overlay = await storage.createOverlay({ ...req.body, userId: req.user!.id });
+    res.json(overlay);
   });
 
-  app.get("/api/github/repos", async (_req, res) => {
-    try {
-      const octokit = await getUncachableGitHubClient();
-      const { data } = await octokit.repos.listForAuthenticatedUser({
-        sort: "updated",
-        per_page: 100,
-      });
-      res.json(data.map((r: any) => ({
-        id: r.id,
-        name: r.name,
-        full_name: r.full_name,
-        html_url: r.html_url,
-        description: r.description,
-        private: r.private,
-        default_branch: r.default_branch,
-        updated_at: r.updated_at,
-      })));
-    } catch (error: any) {
-      console.error("GitHub repos error:", error);
-      res.status(500).json({ error: error.message || "Failed to fetch repos" });
+  app.put("/api/overlays/:id", requireAuth, async (req, res) => {
+    const existing = await storage.getOverlay(req.params.id);
+    if (!existing || existing.userId !== req.user!.id) {
+      return res.status(404).json({ error: "Not found" });
     }
+    const updated = await storage.updateOverlay(req.params.id, req.body);
+    res.json(updated);
   });
 
-  app.get("/api/github/user", async (_req, res) => {
-    try {
-      const octokit = await getUncachableGitHubClient();
-      const { data } = await octokit.users.getAuthenticated();
-      res.json({
-        login: data.login,
-        avatar_url: data.avatar_url,
-        name: data.name,
-        html_url: data.html_url,
-      });
-    } catch (error: any) {
-      console.error("GitHub user error:", error);
-      res.status(500).json({ error: error.message || "Failed to fetch user" });
+  app.delete("/api/overlays/:id", requireAuth, async (req, res) => {
+    const existing = await storage.getOverlay(req.params.id);
+    if (!existing || existing.userId !== req.user!.id) {
+      return res.status(404).json({ error: "Not found" });
     }
+    await storage.deleteOverlay(req.params.id);
+    res.json({ ok: true });
   });
 
-  app.post("/api/github/push", async (req, res) => {
-    try {
-      const { owner, repo, branch, files, message } = req.body;
-      const octokit = await getUncachableGitHubClient();
+  app.get("/api/scenes", requireAuth, async (req, res) => {
+    const list = await storage.getScenes(req.user!.id);
+    res.json(list);
+  });
 
-      let baseSha: string | undefined;
-      try {
-        const { data: ref } = await octokit.git.getRef({ owner, repo, ref: `heads/${branch}` });
-        baseSha = ref.object.sha;
-      } catch (e: any) {
-        // branch doesn't exist yet
-      }
+  app.post("/api/scenes", requireAuth, async (req, res) => {
+    const scene = await storage.createScene({ ...req.body, userId: req.user!.id });
+    res.json(scene);
+  });
 
-      const blobs = [];
-      for (const f of files) {
-        const { data: blob } = await octokit.git.createBlob({
-          owner, repo,
-          content: f.content,
-          encoding: f.encoding || "base64",
-        });
-        blobs.push({ path: f.path, sha: blob.sha, mode: "100644" as const, type: "blob" as const });
-      }
-
-      const { data: tree } = await octokit.git.createTree({
-        owner, repo,
-        tree: blobs,
-        ...(baseSha ? { base_tree: baseSha } : {}),
-      });
-
-      const { data: commit } = await octokit.git.createCommit({
-        owner, repo,
-        message: message || "Push from Twitch Scene Maker",
-        tree: tree.sha,
-        ...(baseSha ? { parents: [baseSha] } : { parents: [] }),
-      });
-
-      if (baseSha) {
-        await octokit.git.updateRef({ owner, repo, ref: `heads/${branch}`, sha: commit.sha });
-      } else {
-        await octokit.git.createRef({ owner, repo, ref: `refs/heads/${branch}`, sha: commit.sha });
-      }
-
-      res.json({ success: true, commitSha: commit.sha, url: `https://github.com/${owner}/${repo}/commit/${commit.sha}` });
-    } catch (error: any) {
-      console.error("GitHub push error:", error);
-      res.status(500).json({ error: error.message || "Failed to push to GitHub" });
+  app.put("/api/scenes/:id", requireAuth, async (req, res) => {
+    const existing = await storage.getScene(req.params.id);
+    if (!existing || existing.userId !== req.user!.id) {
+      return res.status(404).json({ error: "Not found" });
     }
+    const updated = await storage.updateScene(req.params.id, req.body);
+    res.json(updated);
+  });
+
+  app.delete("/api/scenes/:id", requireAuth, async (req, res) => {
+    const existing = await storage.getScene(req.params.id);
+    if (!existing || existing.userId !== req.user!.id) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    await storage.deleteScene(req.params.id);
+    res.json({ ok: true });
+  });
+
+  app.get("/api/alerts", requireAuth, async (req, res) => {
+    const list = await storage.getAlerts(req.user!.id);
+    res.json(list);
+  });
+
+  app.post("/api/alerts", requireAuth, async (req, res) => {
+    const alert = await storage.createAlert({ ...req.body, userId: req.user!.id });
+    res.json(alert);
+  });
+
+  app.put("/api/alerts/:id", requireAuth, async (req, res) => {
+    const existing = await storage.getAlert(req.params.id);
+    if (!existing || existing.userId !== req.user!.id) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    const updated = await storage.updateAlert(req.params.id, req.body);
+    res.json(updated);
+  });
+
+  app.delete("/api/alerts/:id", requireAuth, async (req, res) => {
+    const existing = await storage.getAlert(req.params.id);
+    if (!existing || existing.userId !== req.user!.id) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    await storage.deleteAlert(req.params.id);
+    res.json({ ok: true });
   });
 
   return httpServer;

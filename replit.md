@@ -1,8 +1,8 @@
-# Twitch Scene Maker
+# StreamKit
 
 ## Overview
 
-A web application for creating animated Twitch stream scenes (Starting Soon, Be Right Back, Stream Ending) with a visual editor. Users can customize themes, social media handles, and preview scenes full-screen. The app also includes a drag-and-drop overlay builder for creating custom stream overlays.
+A web application for managing stream overlays, scenes, and alerts. Features user authentication, a dashboard-style interface with sidebar navigation, and CRUD management for all stream assets.
 
 ## User Preferences
 
@@ -12,45 +12,46 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 - **Framework**: React with TypeScript
-- **Routing**: Wouter (lightweight React router)
 - **Styling**: Tailwind CSS v4 with shadcn/ui components (New York style)
-- **Animation**: Framer Motion for scene transitions and effects
 - **State Management**: TanStack React Query for server state, React useState for local state
 - **Build Tool**: Vite with custom plugins for Replit integration
+- **Auth**: Custom hook (`useAuth`) wrapping session-based authentication
 
-Key pages:
-- `/` - Main scene editor with preset management
-- `/scene/:id` - Fullscreen scene preview (opening, brb, ending)
-- `/overlay/builder` - Drag-and-drop custom overlay editor
-- `/overlay/view` - Overlay preview with URL-encoded configuration
+Pages:
+- Auth page (login/signup tabs) — shown when logged out
+- Dashboard with sidebar navigation — shown when logged in
+  - Overlays panel — create/edit/delete overlays
+  - Scenes panel — create/edit/delete scenes
+  - Alerts panel — create/edit/delete alerts (follower, donation, subscriber)
+  - Settings panel — account info and logout
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express 5
 - **Language**: TypeScript compiled with tsx
 - **API Pattern**: RESTful JSON endpoints under `/api/*`
-- **Development**: Vite dev server with HMR proxied through Express
+- **Authentication**: Passport.js with local strategy (email/password), express-session
+- **Password Hashing**: bcryptjs
 
 ### Data Storage
 - **Database**: PostgreSQL with Drizzle ORM
 - **Schema Location**: `shared/schema.ts`
 - **Migrations**: Drizzle Kit (`drizzle-kit push`)
-- **Session Storage**: In-memory storage class (`MemStorage`) for development, with `connect-pg-simple` available for production sessions
-
-### AI Integration
-- **Provider**: OpenAI API via Replit AI Integrations
-- **Use Case**: AI-powered scene generation from text prompts
-- **Model**: GPT for generating scene configurations based on user descriptions
+- **Tables**: users, overlays, scenes, alerts
 
 ### Project Structure
 ```
 client/           # React frontend (Vite)
   src/
     components/   # shadcn/ui components
-    pages/        # Route components
-    lib/          # Utilities and config types
-    hooks/        # Custom React hooks
+    pages/        # Auth page, Dashboard
+      panels/     # Overlays, Scenes, Alerts, Settings panels
+    hooks/        # useAuth, use-toast
+    lib/          # Utilities, queryClient
 server/           # Express backend
-  replit_integrations/  # AI features (audio, chat, image, batch)
+  auth.ts         # Passport setup, auth routes
+  db.ts           # Database connection
+  routes.ts       # CRUD API routes
+  storage.ts      # Database storage implementation
 shared/           # Shared types and database schema
 ```
 
@@ -60,20 +61,10 @@ shared/           # Shared types and database schema
 - PostgreSQL (required, connection via `DATABASE_URL` environment variable)
 - Drizzle ORM for type-safe queries and schema management
 
-### AI Services
-- OpenAI API via Replit AI Integrations
-- Environment variables: `AI_INTEGRATIONS_OPENAI_API_KEY`, `AI_INTEGRATIONS_OPENAI_BASE_URL`
-
 ### Frontend Libraries
 - Radix UI primitives for accessible components
-- Embla Carousel for carousel functionality
 - Google Fonts (Outfit, IBM Plex Mono)
-
-### GitHub Integration
-- GitHub OAuth via Replit Connectors (`@octokit/rest`)
-- Client code: `server/github.ts`
-- API endpoints: `GET /api/github/repos`, `GET /api/github/user`
-- Permissions: read:org, read:project, read:user, repo, user:email
+- Lucide React for icons
 
 ### Build & Development
 - Vite for frontend bundling
