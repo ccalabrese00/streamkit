@@ -14,13 +14,48 @@ export default function AuthPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  const [formError, setFormError] = useState("");
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setFormError("");
+
+    const trimmedEmail = email.trim();
+    const trimmedUsername = username.trim();
+
+    if (!trimmedEmail) {
+      setFormError("Email is required");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setFormError("Please enter a valid email address");
+      return;
+    }
+    if (!password || password.length < 6) {
+      setFormError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (tab === "signup") {
+      if (!trimmedUsername) {
+        setFormError("Username is required");
+        return;
+      }
+      if (trimmedUsername.length < 3) {
+        setFormError("Username must be at least 3 characters");
+        return;
+      }
+      if (!/^[a-zA-Z0-9_]+$/.test(trimmedUsername)) {
+        setFormError("Username can only contain letters, numbers, and underscores");
+        return;
+      }
+    }
+
     try {
       if (tab === "login") {
-        await login({ email, password });
+        await login({ email: trimmedEmail, password });
       } else {
-        await register({ email, username, password });
+        await register({ email: trimmedEmail, username: trimmedUsername, password });
       }
     } catch {}
   }
@@ -102,9 +137,9 @@ export default function AuthPage() {
               />
             </div>
 
-            {error && (
+            {(formError || error) && (
               <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-400" data-testid="text-error">
-                {(error as any)?.message || "Something went wrong"}
+                {formError || (error as any)?.message || "Something went wrong"}
               </div>
             )}
 

@@ -75,17 +75,40 @@ export function setupAuth(app: Express) {
       if (!email || !username || !password) {
         return res.status(400).json({ error: "All fields are required" });
       }
-      if (password.length < 6) {
+
+      const trimmedEmail = String(email).trim().toLowerCase();
+      const trimmedUsername = String(username).trim();
+      const rawPassword = String(password);
+
+      if (!trimmedEmail) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+        return res.status(400).json({ error: "Invalid email format" });
+      }
+      if (!trimmedUsername || trimmedUsername.length < 3) {
+        return res.status(400).json({ error: "Username must be at least 3 characters" });
+      }
+      if (trimmedUsername.length > 30) {
+        return res.status(400).json({ error: "Username must be 30 characters or less" });
+      }
+      if (!/^[a-zA-Z0-9_]+$/.test(trimmedUsername)) {
+        return res.status(400).json({ error: "Username can only contain letters, numbers, and underscores" });
+      }
+      if (rawPassword.length < 6) {
         return res.status(400).json({ error: "Password must be at least 6 characters" });
       }
+      if (rawPassword.length > 128) {
+        return res.status(400).json({ error: "Password must be 128 characters or less" });
+      }
 
-      const existing = await storage.getUserByEmail(email);
+      const existing = await storage.getUserByEmail(trimmedEmail);
       if (existing) {
         return res.status(400).json({ error: "Email already in use" });
       }
 
-      const hashed = await bcrypt.hash(password, 10);
-      const user = await storage.createUser({ email, username, password: hashed });
+      const hashed = await bcrypt.hash(rawPassword, 10);
+      const user = await storage.createUser({ email: trimmedEmail, username: trimmedUsername, password: hashed });
 
       req.login(user, (err) => {
         if (err) {
@@ -100,6 +123,17 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/auth/login", (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body || {};
+
+    if (!email || !String(email).trim()) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
+    }
+
+    req.body.email = String(email).trim().toLowerCase();
+
     passport.authenticate("local", (err: any, user: Express.User | false, info: any) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ error: info?.message || "Invalid credentials" });
