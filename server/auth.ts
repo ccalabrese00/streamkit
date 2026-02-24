@@ -95,11 +95,23 @@ export function setupAuth(app: Express) {
       if (!/^[a-zA-Z0-9_]+$/.test(trimmedUsername)) {
         return res.status(400).json({ error: "Username can only contain letters, numbers, and underscores" });
       }
-      if (rawPassword.length < 6) {
-        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      if (rawPassword.length < 8) {
+        return res.status(400).json({ error: "Password must be at least 8 characters" });
       }
       if (rawPassword.length > 128) {
         return res.status(400).json({ error: "Password must be 128 characters or less" });
+      }
+      if (!/[A-Z]/.test(rawPassword)) {
+        return res.status(400).json({ error: "Password must include an uppercase letter" });
+      }
+      if (!/[a-z]/.test(rawPassword)) {
+        return res.status(400).json({ error: "Password must include a lowercase letter" });
+      }
+      if (!/[0-9]/.test(rawPassword)) {
+        return res.status(400).json({ error: "Password must include a number" });
+      }
+      if (!/[^A-Za-z0-9]/.test(rawPassword)) {
+        return res.status(400).json({ error: "Password must include a special character" });
       }
 
       const existing = await storage.getUserByEmail(trimmedEmail);

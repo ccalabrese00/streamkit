@@ -31,9 +31,27 @@ export default function AuthPage() {
       setFormError("Please enter a valid email address");
       return;
     }
-    if (!password || password.length < 6) {
-      setFormError("Password must be at least 6 characters");
+    if (!password || password.length < 8) {
+      setFormError("Password must be at least 8 characters");
       return;
+    }
+    if (tab === "signup") {
+      if (!/[A-Z]/.test(password)) {
+        setFormError("Password must include an uppercase letter");
+        return;
+      }
+      if (!/[a-z]/.test(password)) {
+        setFormError("Password must include a lowercase letter");
+        return;
+      }
+      if (!/[0-9]/.test(password)) {
+        setFormError("Password must include a number");
+        return;
+      }
+      if (!/[^A-Za-z0-9]/.test(password)) {
+        setFormError("Password must include a special character");
+        return;
+      }
     }
 
     if (tab === "signup") {
@@ -132,9 +150,14 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 className="bg-white/5 border-white/10 text-white h-9"
                 required
-                minLength={6}
+                minLength={8}
                 data-testid="input-password"
               />
+              {tab === "signup" && (
+                <p className="text-[10px] text-white/30 mt-1">
+                  Min 8 characters with uppercase, lowercase, number, and special character
+                </p>
+              )}
             </div>
 
             {(formError || error) && (
