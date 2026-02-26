@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { requireAuth, requireAdmin } from "./auth";
+import { generateImageBuffer } from "./replit_integrations/image/client";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -78,6 +79,21 @@ export async function registerRoutes(
     const event = await storage.resolveSecurityEvent(req.params.id);
     if (!event) return res.status(404).json({ error: "Event not found" });
     res.json(event);
+  });
+
+  app.post("/api/ai/generate-image", requireAuth, async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      if (!prompt || !String(prompt).trim()) {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+      const buffer = await generateImageBuffer(String(prompt).trim(), "1024x1024");
+      const base64 = buffer.toString("base64");
+      res.json({ dataUrl: `data:image/png;base64,${base64}` });
+    } catch (err: any) {
+      console.error("AI image generation error:", err);
+      res.status(500).json({ error: "Failed to generate image" });
+    }
   });
 
   app.get("/api/overlays", requireAuth, async (req, res) => {

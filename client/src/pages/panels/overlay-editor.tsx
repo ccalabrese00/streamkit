@@ -18,13 +18,16 @@ import {
   MoveDown,
   Minus,
   Plus,
+  Smile,
+  PenTool,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Overlay } from "@shared/schema";
 
 export interface OverlayElement {
   id: string;
-  type: "text" | "rect" | "circle" | "image";
+  type: "text" | "rect" | "circle" | "image" | "sticker" | "drawing";
   x: number;
   y: number;
   width: number;
@@ -40,6 +43,11 @@ export interface OverlayElement {
   opacity?: number;
   rotation?: number;
   borderRadius?: number;
+  sticker?: string;
+  drawingPath?: string;
+  drawingColor?: string;
+  drawingWidth?: number;
+  drawingViewBox?: { w: number; h: number };
 }
 
 const CANVAS_WIDTH = 1920;
@@ -48,6 +56,15 @@ const CANVAS_HEIGHT = 1080;
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
 }
+
+const STICKERS = [
+  "🎮", "🎯", "🔥", "⚡", "💎", "🏆", "🎪", "🎨",
+  "👑", "💀", "🤖", "👾", "🎸", "🎵", "💫", "✨",
+  "❤️", "💜", "💙", "💚", "💛", "🧡", "🖤", "🤍",
+  "🚀", "💣", "🎲", "🃏", "🏅", "⭐", "🌟", "💥",
+  "😎", "🤠", "👻", "🎃", "🦄", "🐉", "🦊", "🐺",
+  "⚔️", "🛡️", "🏹", "🔮", "💰", "📢", "🔔", "🎬",
+];
 
 function defaultElement(type: OverlayElement["type"]): OverlayElement {
   const base = { id: generateId(), x: 100, y: 100, opacity: 1, rotation: 0 };
@@ -60,6 +77,10 @@ function defaultElement(type: OverlayElement["type"]): OverlayElement {
       return { ...base, type: "circle", width: 200, height: 200, fill: "#8b5cf6", stroke: "transparent", strokeWidth: 0, borderRadius: 9999 };
     case "image":
       return { ...base, type: "image", width: 300, height: 200, src: "", borderRadius: 0 };
+    case "sticker":
+      return { ...base, type: "sticker", width: 120, height: 120, sticker: "🎮" };
+    case "drawing":
+      return { ...base, type: "drawing", width: 300, height: 300, drawingPath: "", drawingColor: "#ffffff", drawingWidth: 4 };
   }
 }
 
@@ -96,6 +117,16 @@ export default function OverlayEditor({
   } | null>(null);
   const [zoom, setZoom] = useState(0.5);
   const [hasUnsaved, setHasUnsaved] = useState(false);
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [showAiGenerator, setShowAiGenerator] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [drawingMode, setDrawingMode] = useState(false);
+  const [drawingColor, setDrawingColor] = useState("#ffffff");
+  const [drawingWidth, setDrawingWidth] = useState(4);
+  const [currentDrawingPoints, setCurrentDrawingPoints] = useState<{ x: number; y: number }[]>([]);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   useEffect(() => {
     setElements((overlay.elements as OverlayElement[]) || []);
@@ -146,6 +177,113 @@ export default function OverlayEditor({
     setHasUnsaved(true);
   }
 
+  function addSticker(emoji: string) {
+    const el = defaultElement("sticker");
+    el.sticker = emoji;
+    el.x = CANVAS_WIDTH / 2 - el.width / 2;
+    el.y = CANVAS_HEIGHT / 2 - el.height / 2;
+    setElements((prev) => [...prev, el]);
+    setSelectedId(el.id);
+    setShowStickerPicker(false);
+    setHasUnsaved(true);
+  }
+
+  async function generateAiImage() {
+    if (!aiPrompt.trim() || aiGenerating) return;
+    setAiGenerating(true);
+    setAiError("");
+    try {
+      const res = await fetch("/api/ai/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ prompt: aiPrompt.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed to generate");
+      const data = await res.json();
+      const el = defaultElement("image");
+      el.src = data.dataUrl;
+      el.width = 400;
+      el.height = 400;
+      el.x = CANVAS_WIDTH / 2 - el.width / 2;
+      el.y = CANVAS_HEIGHT / 2 - el.height / 2;
+      setElements((prev) => [...prev, el]);
+      setSelectedId(el.id);
+      setShowAiGenerator(false);
+      setAiPrompt("");
+      setHasUnsaved(true);
+    } catch (err) {
+      console.error("AI generation failed:", err);
+      setAiError("Failed to generate image. Please try again.");
+    } finally {
+      setAiGenerating(false);
+    }
+  }
+
+  function pointsToSvgPath(points: { x: number; y: number }[]): string {
+    if (points.length < 2) return "";
+    return points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+  }
+
+  function handleDrawingStart(e: React.MouseEvent) {
+    if (!drawingMode || !canvasRef.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / zoom;
+    const y = (e.clientY - rect.top) / zoom;
+    setIsDrawing(true);
+    setCurrentDrawingPoints([{ x, y }]);
+  }
+
+  function handleDrawingMove(e: React.MouseEvent) {
+    if (!isDrawing || !drawingMode || !canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / zoom;
+    const y = (e.clientY - rect.top) / zoom;
+    setCurrentDrawingPoints((prev) => [...prev, { x, y }]);
+  }
+
+  function handleDrawingEnd() {
+    if (!isDrawing || currentDrawingPoints.length < 2) {
+      setIsDrawing(false);
+      setCurrentDrawingPoints([]);
+      return;
+    }
+    const xs = currentDrawingPoints.map((p) => p.x);
+    const ys = currentDrawingPoints.map((p) => p.y);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const maxX = Math.max(...xs);
+    const maxY = Math.max(...ys);
+    const pad = drawingWidth * 2;
+    const normalizedPoints = currentDrawingPoints.map((p) => ({
+      x: p.x - minX + pad,
+      y: p.y - minY + pad,
+    }));
+    const w = maxX - minX + pad * 2;
+    const h = maxY - minY + pad * 2;
+    const el: OverlayElement = {
+      id: generateId(),
+      type: "drawing",
+      x: minX - pad,
+      y: minY - pad,
+      width: w,
+      height: h,
+      opacity: 1,
+      rotation: 0,
+      drawingPath: pointsToSvgPath(normalizedPoints),
+      drawingColor: drawingColor,
+      drawingWidth: drawingWidth,
+      drawingViewBox: { w, h },
+    };
+    setElements((prev) => [...prev, el]);
+    setSelectedId(el.id);
+    setIsDrawing(false);
+    setCurrentDrawingPoints([]);
+    setHasUnsaved(true);
+  }
+
   function deleteElement(id: string) {
     setElements((prev) => prev.filter((el) => el.id !== id));
     if (selectedId === id) setSelectedId(null);
@@ -180,6 +318,7 @@ export default function OverlayEditor({
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, elementId: string) => {
+      if (drawingMode) return;
       e.stopPropagation();
       e.preventDefault();
       setSelectedId(elementId);
@@ -193,7 +332,7 @@ export default function OverlayEditor({
         startElY: el.y,
       });
     },
-    [elements]
+    [elements, drawingMode]
   );
 
   const handleResizeDown = useCallback(
@@ -365,7 +504,7 @@ export default function OverlayEditor({
       </div>
 
       <div className="flex flex-1 min-h-0">
-        <div className="w-12 border-r border-white/10 flex flex-col items-center py-3 gap-1 shrink-0">
+        <div className="w-12 border-r border-white/10 flex flex-col items-center py-3 gap-1 shrink-0 relative">
           <ToolButton
             icon={<Type className="h-4 w-4" />}
             label="Text"
@@ -390,11 +529,141 @@ export default function OverlayEditor({
             onClick={() => addElement("image")}
             testId="tool-image"
           />
+
+          <div className="w-8 border-t border-white/10 my-1" />
+
+          <ToolButton
+            icon={<Smile className="h-4 w-4" />}
+            label="Stickers"
+            onClick={() => { setShowStickerPicker(!showStickerPicker); setShowAiGenerator(false); }}
+            testId="tool-sticker"
+            active={showStickerPicker}
+          />
+          <ToolButton
+            icon={<PenTool className="h-4 w-4" />}
+            label="Draw"
+            onClick={() => { setDrawingMode(!drawingMode); setShowStickerPicker(false); setShowAiGenerator(false); setSelectedId(null); }}
+            testId="tool-draw"
+            active={drawingMode}
+          />
+          <ToolButton
+            icon={<Sparkles className="h-4 w-4" />}
+            label="AI Generate"
+            onClick={() => { setShowAiGenerator(!showAiGenerator); setShowStickerPicker(false); }}
+            testId="tool-ai"
+            active={showAiGenerator}
+          />
+
+          {showStickerPicker && (
+            <div className="absolute left-14 top-0 z-50 w-64 rounded-xl border border-white/10 bg-[#12122a] p-3 shadow-2xl">
+              <div className="text-xs font-medium text-white/60 mb-2">Stickers</div>
+              <div className="grid grid-cols-8 gap-1">
+                {STICKERS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => addSticker(s)}
+                    className="h-8 w-8 rounded hover:bg-white/10 flex items-center justify-center text-lg transition"
+                    data-testid={`sticker-${s}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {showAiGenerator && (
+            <div className="absolute left-14 top-0 z-50 w-72 rounded-xl border border-white/10 bg-[#12122a] p-4 shadow-2xl">
+              <div className="text-xs font-medium text-white/60 mb-2">AI Image Generator</div>
+              <p className="text-[10px] text-white/30 mb-3">Describe what you want and AI will create it for your overlay</p>
+              <Input
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="e.g. A glowing neon crown with purple flames"
+                className="bg-white/5 border-white/10 text-white h-8 text-xs mb-2"
+                onKeyDown={(e) => e.key === "Enter" && generateAiImage()}
+                disabled={aiGenerating}
+                data-testid="input-ai-prompt"
+              />
+              <Button
+                size="sm"
+                className="w-full gap-2 bg-purple-600 hover:bg-purple-700 text-xs"
+                onClick={generateAiImage}
+                disabled={!aiPrompt.trim() || aiGenerating}
+                data-testid="button-ai-generate"
+              >
+                {aiGenerating ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-3 w-3" />
+                    Generate
+                  </>
+                )}
+              </Button>
+              {aiGenerating && (
+                <p className="text-[10px] text-white/30 mt-2 text-center">This may take 10-20 seconds</p>
+              )}
+              {aiError && (
+                <p className="text-[10px] text-red-400 mt-2 text-center">{aiError}</p>
+              )}
+            </div>
+          )}
         </div>
+
+        {drawingMode && (
+          <div className="w-48 border-r border-white/10 p-3 shrink-0">
+            <div className="text-xs font-medium text-white/60 mb-3">Drawing Tool</div>
+            <div className="grid gap-3">
+              <div className="grid gap-1">
+                <Label className="text-white/50 text-[11px]">Color</Label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={drawingColor}
+                    onChange={(e) => setDrawingColor(e.target.value)}
+                    className="h-8 w-10 rounded border border-white/10 bg-transparent cursor-pointer"
+                    data-testid="input-drawing-color"
+                  />
+                  <Input
+                    value={drawingColor}
+                    onChange={(e) => setDrawingColor(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white h-8 text-xs font-mono flex-1"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-1">
+                <Label className="text-white/50 text-[11px]">Brush Size: {drawingWidth}px</Label>
+                <input
+                  type="range"
+                  min="1"
+                  max="20"
+                  value={drawingWidth}
+                  onChange={(e) => setDrawingWidth(Number(e.target.value))}
+                  className="accent-purple-500"
+                  data-testid="input-drawing-width"
+                />
+              </div>
+              <p className="text-[10px] text-white/30">Click and drag on the canvas to draw. Each stroke becomes a movable element.</p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs border-white/10 text-white/60"
+                onClick={() => setDrawingMode(false)}
+                data-testid="button-stop-drawing"
+              >
+                Stop Drawing
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div
           className="flex-1 overflow-auto bg-[#080810] flex items-center justify-center p-8"
-          onClick={() => setSelectedId(null)}
+          onClick={() => { if (!drawingMode) setSelectedId(null); }}
         >
           <div
             ref={canvasRef}
@@ -409,7 +678,12 @@ export default function OverlayEditor({
               backgroundSize: bgColor === "transparent" ? `${16 * zoom}px ${16 * zoom}px` : `${20 * zoom}px ${20 * zoom}px`,
               backgroundPosition: bgColor === "transparent" ? `0 0, ${8 * zoom}px ${8 * zoom}px` : `0 0, ${10 * zoom}px ${10 * zoom}px`,
               ...(bgColor === "transparent" ? { background: `repeating-conic-gradient(#1a1a2e 0% 25%, #12122a 0% 50%) 0 0 / ${16 * zoom}px ${16 * zoom}px` } : {}),
+              cursor: drawingMode ? "crosshair" : undefined,
             }}
+            onMouseDown={drawingMode ? handleDrawingStart : undefined}
+            onMouseMove={drawingMode ? handleDrawingMove : undefined}
+            onMouseUp={drawingMode ? handleDrawingEnd : undefined}
+            onMouseLeave={drawingMode ? handleDrawingEnd : undefined}
             data-testid="overlay-canvas"
           >
             {elements.map((el) => (
@@ -487,6 +761,31 @@ export default function OverlayEditor({
                     )}
                   </div>
                 )}
+                {el.type === "sticker" && (
+                  <div
+                    className="w-full h-full flex items-center justify-center select-none"
+                    style={{ fontSize: Math.min(el.width, el.height) * zoom * 0.75 }}
+                  >
+                    {el.sticker || "🎮"}
+                  </div>
+                )}
+                {el.type === "drawing" && el.drawingPath && (
+                  <svg
+                    className="w-full h-full"
+                    viewBox={`0 0 ${el.drawingViewBox?.w || el.width} ${el.drawingViewBox?.h || el.height}`}
+                    preserveAspectRatio="none"
+                  >
+                    <path
+                      d={el.drawingPath}
+                      stroke={el.drawingColor || "#ffffff"}
+                      strokeWidth={el.drawingWidth || 4}
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </svg>
+                )}
 
                 {selectedId === el.id &&
                   handles.map((h) => (
@@ -509,6 +808,23 @@ export default function OverlayEditor({
                   ))}
               </div>
             ))}
+
+            {drawingMode && isDrawing && currentDrawingPoints.length > 1 && (
+              <svg
+                className="absolute inset-0 pointer-events-none"
+                style={{ width: CANVAS_WIDTH * zoom, height: CANVAS_HEIGHT * zoom }}
+                viewBox={`0 0 ${CANVAS_WIDTH} ${CANVAS_HEIGHT}`}
+              >
+                <path
+                  d={pointsToSvgPath(currentDrawingPoints)}
+                  stroke={drawingColor}
+                  strokeWidth={drawingWidth}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
           </div>
         </div>
 
@@ -536,16 +852,21 @@ function ToolButton({
   label,
   onClick,
   testId,
+  active,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   testId: string;
+  active?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      className="h-9 w-9 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition"
+      className={cn(
+        "h-9 w-9 rounded-lg flex items-center justify-center transition",
+        active ? "text-purple-400 bg-purple-500/20" : "text-white/50 hover:text-white hover:bg-white/10"
+      )}
       title={label}
       data-testid={testId}
     >
@@ -635,7 +956,8 @@ function ElementProperties({
   onMoveUp: () => void;
   onMoveDown: () => void;
 }) {
-  const typeLabel = element.type === "text" ? "Text" : element.type === "rect" ? "Rectangle" : element.type === "circle" ? "Circle" : "Image";
+  const typeLabels: Record<string, string> = { text: "Text", rect: "Rectangle", circle: "Circle", image: "Image", sticker: "Sticker", drawing: "Drawing" };
+  const typeLabel = typeLabels[element.type] || element.type;
 
   return (
     <div className="p-4">
@@ -801,6 +1123,58 @@ function ElementProperties({
                 value={element.borderRadius || 0}
                 onChange={(v) => onUpdate({ borderRadius: Math.max(0, Number(v)) })}
                 testId="prop-image-radius"
+              />
+            </div>
+          </div>
+        )}
+
+        {element.type === "sticker" && (
+          <div>
+            <div className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Sticker</div>
+            <div className="grid grid-cols-8 gap-1">
+              {STICKERS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => onUpdate({ sticker: s })}
+                  className={cn(
+                    "h-8 w-8 rounded flex items-center justify-center text-lg transition",
+                    element.sticker === s ? "bg-purple-500/30 ring-1 ring-purple-400" : "hover:bg-white/10"
+                  )}
+                  data-testid={`prop-sticker-${s}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {element.type === "drawing" && (
+          <div>
+            <div className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Drawing</div>
+            <div className="grid gap-2">
+              <div className="grid gap-1">
+                <Label className="text-white/50 text-[11px]">Stroke Color</Label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={element.drawingColor || "#ffffff"}
+                    onChange={(e) => onUpdate({ drawingColor: e.target.value })}
+                    className="h-8 w-10 rounded border border-white/10 bg-transparent cursor-pointer"
+                    data-testid="prop-drawing-color"
+                  />
+                  <Input
+                    value={element.drawingColor || "#ffffff"}
+                    onChange={(e) => onUpdate({ drawingColor: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white h-8 text-xs font-mono flex-1"
+                  />
+                </div>
+              </div>
+              <PropInput
+                label="Stroke Width"
+                value={element.drawingWidth || 4}
+                onChange={(v) => onUpdate({ drawingWidth: Math.max(1, Number(v)) })}
+                testId="prop-drawing-width"
               />
             </div>
           </div>
