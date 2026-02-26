@@ -28,6 +28,7 @@ import {
   Smile,
   PenTool,
   Sparkles,
+  Play,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Alert } from "@shared/schema";
@@ -128,6 +129,7 @@ export default function AlertEditor({
   const [giphyLoading, setGiphyLoading] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showAiGenerator, setShowAiGenerator] = useState(false);
+  const [showTestPreview, setShowTestPreview] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiError, setAiError] = useState("");
@@ -526,6 +528,16 @@ export default function AlertEditor({
           </div>
           <Button
             size="sm"
+            variant="outline"
+            className="gap-2 border-white/10 text-white/70 hover:text-white hover:bg-white/10"
+            onClick={() => setShowTestPreview(true)}
+            data-testid="button-test-alert"
+          >
+            <Play className="h-3.5 w-3.5" />
+            Test
+          </Button>
+          <Button
+            size="sm"
             className="gap-2 bg-purple-600 hover:bg-purple-700"
             onClick={() => saveMutation.mutate()}
             disabled={saveMutation.isPending}
@@ -821,6 +833,181 @@ export default function AlertEditor({
             </div>
           )}
         </div>
+      </div>
+
+      {showTestPreview && (
+        <AlertTestPreview
+          elements={elements}
+          bgColor={bgColor}
+          message={alertMessage}
+          type={alertType}
+          animation={alertAnimation}
+          duration={alertDuration}
+          onClose={() => setShowTestPreview(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function AlertTestPreview({ elements, bgColor, message, type, animation, duration, onClose }: {
+  elements: OverlayElement[];
+  bgColor: string;
+  message: string;
+  type: string;
+  animation: string;
+  duration: number;
+  onClose: () => void;
+}) {
+  const [phase, setPhase] = useState<"enter" | "visible" | "exit">("enter");
+  const [timeLeft, setTimeLeft] = useState(duration);
+
+  const sampleNames: Record<string, string> = {
+    follower: "StreamFan42",
+    donation: "GenerousGamer",
+    subscriber: "SubSquad99",
+  };
+  const displayMsg = message.replace(/\{name\}/g, sampleNames[type] || "User123");
+
+  useEffect(() => {
+    const enterTimer = setTimeout(() => setPhase("visible"), 600);
+    return () => clearTimeout(enterTimer);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "visible") return;
+    if (timeLeft <= 0) {
+      setPhase("exit");
+      setTimeout(onClose, 600);
+      return;
+    }
+    const interval = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+    return () => clearInterval(interval);
+  }, [phase, timeLeft, onClose]);
+
+  const animationStyle = (): React.CSSProperties => {
+    if (phase === "enter") {
+      switch (animation) {
+        case "fadeIn": return { opacity: 0, transition: "all 0.6s ease-out" };
+        case "slideUp": return { opacity: 0, transform: "translateY(80px)", transition: "all 0.6s ease-out" };
+        case "slideDown": return { opacity: 0, transform: "translateY(-80px)", transition: "all 0.6s ease-out" };
+        case "bounce": return { opacity: 0, transform: "scale(0.3)", transition: "all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)" };
+        case "zoom": return { opacity: 0, transform: "scale(0)", transition: "all 0.6s ease-out" };
+        default: return { opacity: 0, transition: "all 0.6s ease-out" };
+      }
+    }
+    if (phase === "exit") {
+      switch (animation) {
+        case "fadeIn": return { opacity: 0, transition: "all 0.5s ease-in" };
+        case "slideUp": return { opacity: 0, transform: "translateY(-80px)", transition: "all 0.5s ease-in" };
+        case "slideDown": return { opacity: 0, transform: "translateY(80px)", transition: "all 0.5s ease-in" };
+        case "bounce": return { opacity: 0, transform: "scale(0.3)", transition: "all 0.5s ease-in" };
+        case "zoom": return { opacity: 0, transform: "scale(0)", transition: "all 0.5s ease-in" };
+        default: return { opacity: 0, transition: "all 0.5s ease-in" };
+      }
+    }
+    return { opacity: 1, transform: "translateY(0) scale(1)", transition: "all 0.6s ease-out" };
+  };
+
+  const CANVAS_W = 800;
+  const CANVAS_H = 400;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+      data-testid="alert-test-overlay"
+    >
+      <div className="flex flex-col items-center gap-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-3 text-white/60 text-sm">
+          <span className="uppercase tracking-wider text-[11px] font-medium text-purple-400">Alert Preview</span>
+          <span className="text-white/30">•</span>
+          <span className="text-[11px]">{timeLeft > 0 ? `${timeLeft}s remaining` : "Closing..."}</span>
+        </div>
+
+        <div style={animationStyle()}>
+          <div
+            className="relative shadow-2xl rounded-lg overflow-hidden"
+            style={{
+              width: CANVAS_W,
+              height: CANVAS_H,
+              backgroundColor: bgColor === "transparent" ? "transparent" : bgColor,
+            }}
+            data-testid="alert-test-canvas"
+          >
+            {elements.map((el) => (
+              <div
+                key={el.id}
+                className="absolute"
+                style={{
+                  left: el.x,
+                  top: el.y,
+                  width: el.width,
+                  height: el.height,
+                  opacity: el.opacity ?? 1,
+                  transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
+                }}
+              >
+                {el.type === "text" && (
+                  <div className="w-full h-full flex items-center justify-center select-none overflow-hidden" style={{
+                    fontSize: el.fontSize || 36,
+                    fontFamily: el.fontFamily || "Outfit",
+                    color: el.color || "#ffffff",
+                    backgroundColor: el.fill !== "transparent" ? el.fill : undefined,
+                    borderRadius: el.borderRadius ?? 0,
+                    border: el.stroke && el.stroke !== "transparent" ? `${el.strokeWidth || 1}px solid ${el.stroke}` : undefined,
+                  }}>
+                    {(el.text || "Text").replace(/\{name\}/g, sampleNames[type] || "User123")}
+                  </div>
+                )}
+                {el.type === "rect" && (
+                  <div className="w-full h-full" style={{
+                    backgroundColor: el.fill || "#8b5cf6",
+                    borderRadius: el.borderRadius ?? 0,
+                    border: el.stroke && el.stroke !== "transparent" ? `${el.strokeWidth || 1}px solid ${el.stroke}` : undefined,
+                  }} />
+                )}
+                {el.type === "circle" && (
+                  <div className="w-full h-full" style={{
+                    backgroundColor: el.fill || "#8b5cf6",
+                    borderRadius: "50%",
+                    border: el.stroke && el.stroke !== "transparent" ? `${el.strokeWidth || 1}px solid ${el.stroke}` : undefined,
+                  }} />
+                )}
+                {el.type === "image" && (
+                  <div className="w-full h-full overflow-hidden flex items-center justify-center" style={{ borderRadius: el.borderRadius ?? 0 }}>
+                    {el.src ? <img src={el.src} alt="" className="w-full h-full object-cover" draggable={false} /> : <div className="w-full h-full bg-white/10 flex items-center justify-center"><Image className="text-white/20 w-6 h-6" /></div>}
+                  </div>
+                )}
+                {el.type === "sticker" && (
+                  <div className="w-full h-full flex items-center justify-center select-none">
+                    {el.src ? <img src={el.src} alt={el.sticker || "sticker"} className="w-full h-full object-contain" draggable={false} /> : <span style={{ fontSize: Math.min(el.width, el.height) * 0.75 }}>{el.sticker || "🎮"}</span>}
+                  </div>
+                )}
+                {el.type === "drawing" && el.drawingPath && (
+                  <svg className="w-full h-full" viewBox={`0 0 ${el.drawingViewBox?.w || el.width} ${el.drawingViewBox?.h || el.height}`} preserveAspectRatio="none">
+                    <path d={el.drawingPath} stroke={el.drawingColor || "#ffffff"} strokeWidth={el.drawingWidth || 4} fill="none" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                  </svg>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="text-center">
+          <p className="text-white/80 text-sm font-medium" data-testid="alert-test-message">{displayMsg}</p>
+          <p className="text-white/30 text-[11px] mt-1">Click anywhere to close</p>
+        </div>
+
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-white/10 text-white/60 hover:text-white text-xs"
+          onClick={onClose}
+          data-testid="button-close-test-alert"
+        >
+          Close Preview
+        </Button>
       </div>
     </div>
   );
