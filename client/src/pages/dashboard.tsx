@@ -116,7 +116,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <div className="p-4 md:p-6 max-w-5xl">
+        <div className={activeTab === "overlays" ? "" : "p-4 md:p-6 max-w-5xl"}>
           {activeTab === "overlays" && <OverlaysPanel />}
           {activeTab === "scenes" && <ScenesPanel />}
           {activeTab === "alerts" && <AlertsPanel />}
