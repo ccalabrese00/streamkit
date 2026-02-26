@@ -57,14 +57,15 @@ function generateId() {
   return Math.random().toString(36).substring(2, 10);
 }
 
-const STICKERS = [
-  "🎮", "🎯", "🔥", "⚡", "💎", "🏆", "🎪", "🎨",
-  "👑", "💀", "🤖", "👾", "🎸", "🎵", "💫", "✨",
-  "❤️", "💜", "💙", "💚", "💛", "🧡", "🖤", "🤍",
-  "🚀", "💣", "🎲", "🃏", "🏅", "⭐", "🌟", "💥",
-  "😎", "🤠", "👻", "🎃", "🦄", "🐉", "🦊", "🐺",
-  "⚔️", "🛡️", "🏹", "🔮", "💰", "📢", "🔔", "🎬",
-];
+interface GiphySticker {
+  id: string;
+  title: string;
+  url: string;
+  previewUrl: string;
+  originalUrl: string;
+  width: number;
+  height: number;
+}
 
 function defaultElement(type: OverlayElement["type"]): OverlayElement {
   const base = { id: generateId(), x: 100, y: 100, opacity: 1, rotation: 0 };
@@ -78,7 +79,7 @@ function defaultElement(type: OverlayElement["type"]): OverlayElement {
     case "image":
       return { ...base, type: "image", width: 300, height: 200, src: "", borderRadius: 0 };
     case "sticker":
-      return { ...base, type: "sticker", width: 120, height: 120, sticker: "🎮" };
+      return { ...base, type: "sticker", width: 200, height: 200, sticker: "", src: "" };
     case "drawing":
       return { ...base, type: "drawing", width: 300, height: 300, drawingPath: "", drawingColor: "#ffffff", drawingWidth: 4 };
   }
@@ -118,6 +119,10 @@ export default function OverlayEditor({
   const [zoom, setZoom] = useState(0.5);
   const [hasUnsaved, setHasUnsaved] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [giphyStickers, setGiphyStickers] = useState<GiphySticker[]>([]);
+  const [giphySearch, setGiphySearch] = useState("");
+  const [giphyLoading, setGiphyLoading] = useState(false);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showAiGenerator, setShowAiGenerator] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -177,9 +182,51 @@ export default function OverlayEditor({
     setHasUnsaved(true);
   }
 
-  function addSticker(emoji: string) {
+  async function fetchGiphyTrending() {
+    setGiphyLoading(true);
+    try {
+      const res = await fetch("/api/giphy/trending?limit=25", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      setGiphyStickers(data.stickers);
+    } catch (err) {
+      console.error("Giphy trending error:", err);
+    } finally {
+      setGiphyLoading(false);
+    }
+  }
+
+  async function searchGiphy(q: string) {
+    if (!q.trim()) {
+      fetchGiphyTrending();
+      return;
+    }
+    setGiphyLoading(true);
+    try {
+      const res = await fetch(`/api/giphy/search?q=${encodeURIComponent(q)}&limit=25`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+      setGiphyStickers(data.stickers);
+    } catch (err) {
+      console.error("Giphy search error:", err);
+    } finally {
+      setGiphyLoading(false);
+    }
+  }
+
+  function handleGiphySearchChange(value: string) {
+    setGiphySearch(value);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => searchGiphy(value), 400);
+  }
+
+  function addGiphySticker(sticker: GiphySticker) {
     const el = defaultElement("sticker");
-    el.sticker = emoji;
+    el.src = sticker.originalUrl;
+    el.sticker = sticker.title;
+    const aspect = sticker.width / sticker.height;
+    el.width = 200;
+    el.height = Math.round(200 / aspect);
     el.x = CANVAS_WIDTH / 2 - el.width / 2;
     el.y = CANVAS_HEIGHT / 2 - el.height / 2;
     setElements((prev) => [...prev, el]);
@@ -553,7 +600,12 @@ export default function OverlayEditor({
           <ToolButton
             icon={<Smile className="h-4 w-4" />}
             label="Stickers"
-            onClick={() => { setShowStickerPicker(!showStickerPicker); setShowAiGenerator(false); }}
+            onClick={() => {
+              const next = !showStickerPicker;
+              setShowStickerPicker(next);
+              setShowAiGenerator(false);
+              if (next && giphyStickers.length === 0) fetchGiphyTrending();
+            }}
             testId="tool-sticker"
             active={showStickerPicker}
           />
@@ -573,19 +625,47 @@ export default function OverlayEditor({
           />
 
           {showStickerPicker && (
-            <div className="absolute left-14 top-0 z-50 w-64 rounded-xl border border-white/10 bg-[#12122a] p-3 shadow-2xl">
-              <div className="text-xs font-medium text-white/60 mb-2">Stickers</div>
-              <div className="grid grid-cols-8 gap-1">
-                {STICKERS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => addSticker(s)}
-                    className="h-8 w-8 rounded hover:bg-white/10 flex items-center justify-center text-lg transition"
-                    data-testid={`sticker-${s}`}
-                  >
-                    {s}
-                  </button>
-                ))}
+            <div className="absolute left-14 top-0 z-50 w-80 rounded-xl border border-white/10 bg-[#12122a] shadow-2xl flex flex-col" style={{ maxHeight: 420 }}>
+              <div className="p-3 pb-2 border-b border-white/10">
+                <div className="text-xs font-medium text-white/60 mb-2">Giphy Stickers</div>
+                <Input
+                  value={giphySearch}
+                  onChange={(e) => handleGiphySearchChange(e.target.value)}
+                  placeholder="Search stickers..."
+                  className="bg-white/5 border-white/10 text-white h-8 text-xs"
+                  data-testid="input-giphy-search"
+                />
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 min-h-0">
+                {giphyLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-purple-400" />
+                  </div>
+                ) : giphyStickers.length === 0 ? (
+                  <div className="text-center text-white/30 text-xs py-8">No stickers found</div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {giphyStickers.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => addGiphySticker(s)}
+                        className="rounded-lg hover:bg-white/10 p-1 transition flex items-center justify-center aspect-square overflow-hidden"
+                        title={s.title}
+                        data-testid={`sticker-giphy-${s.id}`}
+                      >
+                        <img
+                          src={s.previewUrl}
+                          alt={s.title}
+                          className="max-w-full max-h-full object-contain"
+                          loading="lazy"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-2 border-t border-white/10 flex items-center justify-center">
+                <img src="https://giphy.com/static/img/poweredby_giphy.png" alt="Powered by GIPHY" className="h-3 opacity-40" />
               </div>
             </div>
           )}
@@ -782,11 +862,19 @@ export default function OverlayEditor({
                   </div>
                 )}
                 {el.type === "sticker" && (
-                  <div
-                    className="w-full h-full flex items-center justify-center select-none"
-                    style={{ fontSize: Math.min(el.width, el.height) * zoom * 0.75 }}
-                  >
-                    {el.sticker || "🎮"}
+                  <div className="w-full h-full flex items-center justify-center select-none pointer-events-none">
+                    {el.src ? (
+                      <img
+                        src={el.src}
+                        alt={el.sticker || "sticker"}
+                        className="w-full h-full object-contain pointer-events-none"
+                        draggable={false}
+                      />
+                    ) : (
+                      <span style={{ fontSize: Math.min(el.width, el.height) * zoom * 0.75 }}>
+                        {el.sticker || "🎮"}
+                      </span>
+                    )}
                   </div>
                 )}
                 {el.type === "drawing" && el.drawingPath && (
@@ -1151,20 +1239,22 @@ function ElementProperties({
         {element.type === "sticker" && (
           <div>
             <div className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Sticker</div>
-            <div className="grid grid-cols-8 gap-1">
-              {STICKERS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => onUpdate({ sticker: s })}
-                  className={cn(
-                    "h-8 w-8 rounded flex items-center justify-center text-lg transition",
-                    element.sticker === s ? "bg-purple-500/30 ring-1 ring-purple-400" : "hover:bg-white/10"
-                  )}
-                  data-testid={`prop-sticker-${s}`}
-                >
-                  {s}
-                </button>
-              ))}
+            <div className="grid gap-2">
+              {element.src && (
+                <div className="rounded-lg bg-white/5 p-2 flex items-center justify-center">
+                  <img src={element.src} alt={element.sticker || "sticker"} className="max-h-20 object-contain" />
+                </div>
+              )}
+              <div className="grid gap-1">
+                <Label className="text-white/50 text-[11px]">Source URL</Label>
+                <Input
+                  value={element.src || ""}
+                  onChange={(e) => onUpdate({ src: e.target.value })}
+                  placeholder="Giphy URL"
+                  className="bg-white/5 border-white/10 text-white h-8 text-xs"
+                  data-testid="prop-sticker-url"
+                />
+              </div>
             </div>
           </div>
         )}

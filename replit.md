@@ -69,6 +69,16 @@ shared/           # Shared types and database schema
 - Google Fonts (Outfit, IBM Plex Mono)
 - Lucide React for icons
 
+### External APIs
+- **Giphy API** — Animated sticker search & trending for overlay editor (`GIPHY_API_KEY` secret)
+- **OpenAI (via Replit AI Integrations)** — AI image generation for overlays
+
+### Overlay Editor Tools
+- Text, Rectangle, Circle, Image (basic elements)
+- Giphy animated stickers (search & trending, rendered as GIFs)
+- Freehand drawing tool (SVG paths, customizable color/width)
+- AI image generator (generates images from text prompts)
+
 ### Build & Development
 - Vite for frontend bundling
 - esbuild for server bundling (production)

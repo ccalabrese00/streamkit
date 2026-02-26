@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { requireAuth, requireAdmin } from "./auth";
 import { generateImageBuffer } from "./replit_integrations/image/client";
 
+const GIPHY_API_KEY = process.env.GIPHY_API_KEY;
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -79,6 +81,60 @@ export async function registerRoutes(
     const event = await storage.resolveSecurityEvent(req.params.id);
     if (!event) return res.status(404).json({ error: "Event not found" });
     res.json(event);
+  });
+
+  app.get("/api/giphy/trending", requireAuth, async (req, res) => {
+    try {
+      if (!GIPHY_API_KEY) return res.status(500).json({ error: "Giphy not configured" });
+      const limit = Math.min(Number(req.query.limit) || 25, 50);
+      const offset = Number(req.query.offset) || 0;
+      const response = await fetch(
+        `https://api.giphy.com/v1/stickers/trending?api_key=${GIPHY_API_KEY}&limit=${limit}&offset=${offset}&rating=g`
+      );
+      if (!response.ok) throw new Error("Giphy API error");
+      const data = await response.json();
+      const stickers = data.data.map((g: any) => ({
+        id: g.id,
+        title: g.title,
+        url: g.images.fixed_height_small.url,
+        previewUrl: g.images.preview_gif?.url || g.images.fixed_height_small.url,
+        originalUrl: g.images.original.url,
+        width: Number(g.images.fixed_height_small.width),
+        height: Number(g.images.fixed_height_small.height),
+      }));
+      res.json({ stickers, total: data.pagination.total_count });
+    } catch (err) {
+      console.error("Giphy trending error:", err);
+      res.status(500).json({ error: "Failed to fetch stickers" });
+    }
+  });
+
+  app.get("/api/giphy/search", requireAuth, async (req, res) => {
+    try {
+      if (!GIPHY_API_KEY) return res.status(500).json({ error: "Giphy not configured" });
+      const q = String(req.query.q || "").trim();
+      if (!q) return res.status(400).json({ error: "Search query required" });
+      const limit = Math.min(Number(req.query.limit) || 25, 50);
+      const offset = Number(req.query.offset) || 0;
+      const response = await fetch(
+        `https://api.giphy.com/v1/stickers/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}&rating=g`
+      );
+      if (!response.ok) throw new Error("Giphy API error");
+      const data = await response.json();
+      const stickers = data.data.map((g: any) => ({
+        id: g.id,
+        title: g.title,
+        url: g.images.fixed_height_small.url,
+        previewUrl: g.images.preview_gif?.url || g.images.fixed_height_small.url,
+        originalUrl: g.images.original.url,
+        width: Number(g.images.fixed_height_small.width),
+        height: Number(g.images.fixed_height_small.height),
+      }));
+      res.json({ stickers, total: data.pagination.total_count });
+    } catch (err) {
+      console.error("Giphy search error:", err);
+      res.status(500).json({ error: "Failed to search stickers" });
+    }
   });
 
   app.post("/api/ai/generate-image", requireAuth, async (req, res) => {
