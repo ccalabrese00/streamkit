@@ -843,6 +843,7 @@ export default function AlertEditor({
           type={alertType}
           animation={alertAnimation}
           duration={alertDuration}
+          accentColor={alertColor}
           onClose={() => setShowTestPreview(false)}
         />
       )}
@@ -850,13 +851,14 @@ export default function AlertEditor({
   );
 }
 
-function AlertTestPreview({ elements, bgColor, message, type, animation, duration, onClose }: {
+function AlertTestPreview({ elements, bgColor, message, type, animation, duration, accentColor, onClose }: {
   elements: OverlayElement[];
   bgColor: string;
   message: string;
   type: string;
   animation: string;
   duration: number;
+  accentColor: string;
   onClose: () => void;
 }) {
   const [phase, setPhase] = useState<"enter" | "visible" | "exit">("enter");
@@ -994,20 +996,62 @@ function AlertTestPreview({ elements, bgColor, message, type, animation, duratio
           </div>
         </div>
 
-        <div className="text-center">
-          <p className="text-white/80 text-sm font-medium" data-testid="alert-test-message">{displayMsg}</p>
-          <p className="text-white/30 text-[11px] mt-1">Click anywhere to close</p>
+        <div className="bg-white/5 border border-white/10 rounded-lg px-6 py-4 max-w-[800px] w-full" data-testid="alert-test-settings">
+          <div className="flex items-start gap-6">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: accentColor }} />
+                <span className="text-[11px] uppercase tracking-wider font-medium text-white/40">
+                  {alertTypes.find((t) => t.value === type)?.label || type} Alert
+                </span>
+              </div>
+              <p className="text-white text-sm font-medium truncate" data-testid="alert-test-message">{displayMsg}</p>
+            </div>
+            <div className="flex gap-6 shrink-0 text-[11px]">
+              <div>
+                <span className="text-white/30 block">Duration</span>
+                <span className="text-white/70 font-medium">{duration}s</span>
+              </div>
+              <div>
+                <span className="text-white/30 block">Animation</span>
+                <span className="text-white/70 font-medium">{animations.find((a) => a.value === animation)?.label || animation}</span>
+              </div>
+              <div>
+                <span className="text-white/30 block">Accent</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="h-3 w-3 rounded-sm border border-white/10" style={{ backgroundColor: accentColor }} />
+                  <span className="text-white/70 font-mono text-[10px]">{accentColor}</span>
+                </div>
+              </div>
+              <div>
+                <span className="text-white/30 block">Background</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  {bgColor === "transparent" ? (
+                    <span className="text-white/70 text-[10px]">Transparent</span>
+                  ) : (
+                    <>
+                      <div className="h-3 w-3 rounded-sm border border-white/10" style={{ backgroundColor: bgColor }} />
+                      <span className="text-white/70 font-mono text-[10px]">{bgColor}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <Button
-          size="sm"
-          variant="outline"
-          className="border-white/10 text-white/60 hover:text-white text-xs"
-          onClick={onClose}
-          data-testid="button-close-test-alert"
-        >
-          Close Preview
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-white/10 text-white/60 hover:text-white text-xs"
+            onClick={onClose}
+            data-testid="button-close-test-alert"
+          >
+            Close Preview
+          </Button>
+          <span className="text-white/30 text-[11px]">Click anywhere to close</span>
+        </div>
       </div>
     </div>
   );
