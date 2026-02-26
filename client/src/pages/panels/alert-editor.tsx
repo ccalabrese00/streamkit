@@ -993,6 +993,28 @@ function AlertTestPreview({ elements, bgColor, message, type, animation, duratio
                 )}
               </div>
             ))}
+
+            {displayMsg && (
+              <div
+                className="absolute left-0 right-0 bottom-0 flex items-center justify-center px-4 py-3"
+                style={{ pointerEvents: "none" }}
+                data-testid="alert-test-message-overlay"
+              >
+                <div
+                  className="text-center px-5 py-2.5 rounded-md max-w-full"
+                  style={{
+                    backgroundColor: `${accentColor}dd`,
+                    color: "#ffffff",
+                    fontFamily: "Outfit",
+                    fontSize: 18,
+                    fontWeight: 600,
+                    textShadow: "0 1px 3px rgba(0,0,0,0.5)",
+                  }}
+                >
+                  {displayMsg}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
