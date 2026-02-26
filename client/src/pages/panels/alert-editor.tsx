@@ -896,13 +896,38 @@ function ElementProps({
               <PropInput label="Font Size" value={element.fontSize || 36} onChange={(v) => onUpdate({ fontSize: Math.max(1, Number(v)) })} testId="alert-prop-font-size" />
               <div className="grid gap-1">
                 <Label className="text-white/50 text-[11px]">Font</Label>
-                <select value={element.fontFamily || "Outfit"} onChange={(e) => onUpdate({ fontFamily: e.target.value })} className="bg-white/5 border border-white/10 text-white h-8 text-xs rounded-md px-2" data-testid="alert-prop-font-family">
-                  <option value="Outfit">Outfit</option>
-                  <option value="IBM Plex Mono">IBM Plex Mono</option>
-                  <option value="Arial">Arial</option>
-                  <option value="Georgia">Georgia</option>
-                  <option value="Impact">Impact</option>
-                  <option value="Courier New">Courier New</option>
+                <select value={element.fontFamily || "Outfit"} onChange={(e) => onUpdate({ fontFamily: e.target.value })} className="bg-white/5 border border-white/10 text-white h-8 text-xs rounded-md px-2" data-testid="alert-prop-font-family" style={{ fontFamily: element.fontFamily || "Outfit" }}>
+                  <optgroup label="Clean">
+                    <option value="Outfit" style={{ fontFamily: "Outfit" }}>Outfit</option>
+                    <option value="Fredoka" style={{ fontFamily: "Fredoka" }}>Fredoka</option>
+                    <option value="Righteous" style={{ fontFamily: "Righteous" }}>Righteous</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Georgia">Georgia</option>
+                  </optgroup>
+                  <optgroup label="Monospace">
+                    <option value="IBM Plex Mono" style={{ fontFamily: "IBM Plex Mono" }}>IBM Plex Mono</option>
+                    <option value="Courier New">Courier New</option>
+                  </optgroup>
+                  <optgroup label="Display">
+                    <option value="Bebas Neue" style={{ fontFamily: "Bebas Neue" }}>Bebas Neue</option>
+                    <option value="Bangers" style={{ fontFamily: "Bangers" }}>Bangers</option>
+                    <option value="Bungee" style={{ fontFamily: "Bungee" }}>Bungee</option>
+                    <option value="Impact">Impact</option>
+                    <option value="Titan One" style={{ fontFamily: "Titan One" }}>Titan One</option>
+                    <option value="Luckiest Guy" style={{ fontFamily: "Luckiest Guy" }}>Luckiest Guy</option>
+                  </optgroup>
+                  <optgroup label="Gaming">
+                    <option value="Press Start 2P" style={{ fontFamily: "Press Start 2P" }}>Press Start 2P</option>
+                    <option value="Orbitron" style={{ fontFamily: "Orbitron" }}>Orbitron</option>
+                    <option value="Chakra Petch" style={{ fontFamily: "Chakra Petch" }}>Chakra Petch</option>
+                    <option value="Russo One" style={{ fontFamily: "Russo One" }}>Russo One</option>
+                    <option value="Black Ops One" style={{ fontFamily: "Black Ops One" }}>Black Ops One</option>
+                  </optgroup>
+                  <optgroup label="Fun">
+                    <option value="Permanent Marker" style={{ fontFamily: "Permanent Marker" }}>Permanent Marker</option>
+                    <option value="Rubik Glitch" style={{ fontFamily: "Rubik Glitch" }}>Rubik Glitch</option>
+                    <option value="Creepster" style={{ fontFamily: "Creepster" }}>Creepster</option>
+                  </optgroup>
                 </select>
               </div>
               <div className="grid gap-1">
@@ -910,6 +935,17 @@ function ElementProps({
                 <div className="flex gap-2">
                   <input type="color" value={element.color || "#ffffff"} onChange={(e) => onUpdate({ color: e.target.value })} className="h-8 w-10 rounded border border-white/10 bg-transparent cursor-pointer" data-testid="alert-prop-text-color" />
                   <Input value={element.color || "#ffffff"} onChange={(e) => onUpdate({ color: e.target.value })} className="bg-white/5 border-white/10 text-white h-8 text-xs font-mono flex-1" />
+                </div>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {["#ffffff","#000000","#ff0000","#ff4444","#ff8800","#ffcc00","#ffff00","#88ff00","#00ff00","#00ffcc","#00ccff","#0088ff","#0000ff","#8800ff","#ff00ff","#ff0088","#8b5cf6","#ec4899","#f97316","#14b8a6"].map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => onUpdate({ color: c })}
+                      className={cn("h-5 w-5 rounded-sm border transition", element.color === c ? "border-white scale-110" : "border-white/20 hover:border-white/50")}
+                      style={{ backgroundColor: c }}
+                      data-testid={`alert-color-preset-${c}`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
