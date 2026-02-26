@@ -702,6 +702,8 @@ export default function OverlayEditor({
                   transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
                 }}
                 onMouseDown={(e) => handleMouseDown(e, el.id)}
+                onDragStart={(e) => e.preventDefault()}
+                draggable={false}
                 data-testid={`canvas-element-${el.id}`}
               >
                 {el.type === "text" && (
