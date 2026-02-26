@@ -316,21 +316,28 @@ export default function OverlayEditor({
     return zoom;
   }
 
+  const pendingDragRef = useRef<{
+    elementId: string;
+    startX: number;
+    startY: number;
+    startElX: number;
+    startElY: number;
+  } | null>(null);
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, elementId: string) => {
       if (drawingMode) return;
       e.stopPropagation();
-      e.preventDefault();
       setSelectedId(elementId);
       const el = elements.find((el) => el.id === elementId);
       if (!el) return;
-      setDragState({
+      pendingDragRef.current = {
         elementId,
         startX: e.clientX,
         startY: e.clientY,
         startElX: el.x,
         startElY: el.y,
-      });
+      };
     },
     [elements, drawingMode]
   );
@@ -356,8 +363,20 @@ export default function OverlayEditor({
   );
 
   useEffect(() => {
+    const DRAG_THRESHOLD = 3;
+
     function handleMouseMove(e: MouseEvent) {
       const scale = getScale();
+      const pending = pendingDragRef.current;
+      if (pending && !dragState) {
+        const dx = Math.abs(e.clientX - pending.startX);
+        const dy = Math.abs(e.clientY - pending.startY);
+        if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
+          setDragState(pending);
+          pendingDragRef.current = null;
+        }
+        return;
+      }
       if (dragState) {
         const dx = (e.clientX - dragState.startX) / scale;
         const dy = (e.clientY - dragState.startY) / scale;
@@ -399,19 +418,18 @@ export default function OverlayEditor({
     }
 
     function handleMouseUp() {
+      pendingDragRef.current = null;
       setDragState(null);
       setResizeState(null);
     }
 
-    if (dragState || resizeState) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-      return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
-      };
-    }
-  }, [dragState, resizeState, zoom]);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dragState, resizeState, zoom, elements]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
