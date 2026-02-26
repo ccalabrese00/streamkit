@@ -402,11 +402,13 @@ export default function OverlayEditor({
             style={{
               width: CANVAS_WIDTH * zoom,
               height: CANVAS_HEIGHT * zoom,
-              backgroundColor: bgColor,
-              backgroundImage:
-                "linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.02) 75%), linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.02) 75%)",
-              backgroundSize: `${20 * zoom}px ${20 * zoom}px`,
-              backgroundPosition: `0 0, ${10 * zoom}px ${10 * zoom}px`,
+              backgroundColor: bgColor === "transparent" ? undefined : bgColor,
+              backgroundImage: bgColor === "transparent"
+                ? "linear-gradient(45deg, #1a1a2e 25%, transparent 25%, transparent 75%, #1a1a2e 75%), linear-gradient(45deg, #1a1a2e 25%, transparent 25%, transparent 75%, #1a1a2e 75%)"
+                : "linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.02) 75%), linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.02) 75%)",
+              backgroundSize: bgColor === "transparent" ? `${16 * zoom}px ${16 * zoom}px` : `${20 * zoom}px ${20 * zoom}px`,
+              backgroundPosition: bgColor === "transparent" ? `0 0, ${8 * zoom}px ${8 * zoom}px` : `0 0, ${10 * zoom}px ${10 * zoom}px`,
+              ...(bgColor === "transparent" ? { background: `repeating-conic-gradient(#1a1a2e 0% 25%, #12122a 0% 50%) 0 0 / ${16 * zoom}px ${16 * zoom}px` } : {}),
             }}
             data-testid="overlay-canvas"
           >
@@ -559,6 +561,8 @@ function CanvasProperties({
   bgColor: string;
   onBgColorChange: (c: string) => void;
 }) {
+  const isTransparent = bgColor === "transparent";
+
   return (
     <div className="p-4">
       <div className="text-xs font-medium text-white/60 uppercase tracking-wider mb-4">
@@ -567,21 +571,43 @@ function CanvasProperties({
       <div className="grid gap-3">
         <div className="grid gap-1.5">
           <Label className="text-white/50 text-[11px]">Background</Label>
-          <div className="flex gap-2">
-            <input
-              type="color"
-              value={bgColor}
-              onChange={(e) => onBgColorChange(e.target.value)}
-              className="h-8 w-10 rounded border border-white/10 bg-transparent cursor-pointer"
-              data-testid="input-canvas-bg"
+          <button
+            onClick={() => onBgColorChange(isTransparent ? "#0a0a1a" : "transparent")}
+            className={cn(
+              "flex items-center gap-2 w-full rounded-lg border px-3 py-2 text-xs font-medium transition",
+              isTransparent
+                ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
+                : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
+            )}
+            data-testid="button-transparent-bg"
+          >
+            <div
+              className="h-4 w-4 rounded border border-white/20 shrink-0"
+              style={{
+                background: isTransparent
+                  ? "repeating-conic-gradient(#444 0% 25%, #666 0% 50%) 0 0 / 8px 8px"
+                  : undefined,
+              }}
             />
-            <Input
-              value={bgColor}
-              onChange={(e) => onBgColorChange(e.target.value)}
-              className="bg-white/5 border-white/10 text-white h-8 text-xs font-mono flex-1"
-              data-testid="input-canvas-bg-hex"
-            />
-          </div>
+            Transparent
+          </button>
+          {!isTransparent && (
+            <div className="flex gap-2 mt-1">
+              <input
+                type="color"
+                value={bgColor}
+                onChange={(e) => onBgColorChange(e.target.value)}
+                className="h-8 w-10 rounded border border-white/10 bg-transparent cursor-pointer"
+                data-testid="input-canvas-bg"
+              />
+              <Input
+                value={bgColor}
+                onChange={(e) => onBgColorChange(e.target.value)}
+                className="bg-white/5 border-white/10 text-white h-8 text-xs font-mono flex-1"
+                data-testid="input-canvas-bg-hex"
+              />
+            </div>
+          )}
         </div>
         <div className="text-[10px] text-white/30 mt-2">
           1920 x 1080px canvas
