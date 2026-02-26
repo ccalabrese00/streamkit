@@ -743,18 +743,18 @@ export default function OverlayEditor({
                 )}
                 {el.type === "image" && (
                   <div
-                    className="w-full h-full overflow-hidden flex items-center justify-center"
+                    className="w-full h-full overflow-hidden flex items-center justify-center pointer-events-none select-none"
                     style={{ borderRadius: el.borderRadius ?? 0 }}
                   >
                     {el.src ? (
                       <img
                         src={el.src}
                         alt=""
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover pointer-events-none select-none"
                         draggable={false}
                       />
                     ) : (
-                      <div className="w-full h-full bg-white/10 flex items-center justify-center">
+                      <div className="w-full h-full bg-white/10 flex items-center justify-center pointer-events-none">
                         <Image
                           className="text-white/20"
                           style={{ width: 24 * zoom, height: 24 * zoom }}
