@@ -53,6 +53,8 @@ export const alerts = pgTable("alerts", {
   color: text("color").notNull().default("#8b5cf6"),
   fontSize: integer("font_size").notNull().default(32),
   animation: text("animation").notNull().default("fadeIn"),
+  bgColor: text("bg_color").notNull().default("transparent"),
+  elements: jsonb("elements").notNull().default([]),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

@@ -22,7 +22,7 @@ Pages:
 - Dashboard with sidebar navigation — shown when logged in
   - Overlays panel — create/edit/delete overlays
   - Scenes panel — create/edit/delete scenes
-  - Alerts panel — create/edit/delete alerts (follower, donation, subscriber)
+  - Alerts panel — create/edit/delete alerts with visual editor (follower, donation, subscriber)
   - Settings panel — account info and logout
   - Admin panel (admin-only) — user management (ban/unban/delete) and security alerts
 

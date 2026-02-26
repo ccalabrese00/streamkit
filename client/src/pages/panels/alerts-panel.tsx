@@ -12,8 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Pencil, X, Check, Loader2, Bell, UserPlus, DollarSign, Star } from "lucide-react";
+import { Plus, Trash2, Pencil, Loader2, Bell, UserPlus, DollarSign, Star } from "lucide-react";
 import type { Alert } from "@shared/schema";
+import AlertEditor from "./alert-editor";
 
 const alertTypes = [
   { value: "follower", label: "Follower", icon: UserPlus, color: "text-blue-400" },
@@ -32,7 +33,7 @@ const animations = [
 export default function AlertsPanel() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingAlert, setEditingAlert] = useState<Alert | null>(null);
 
   const [alertName, setAlertName] = useState("");
   const [alertType, setAlertType] = useState("follower");
@@ -72,7 +73,6 @@ export default function AlertsPanel() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/alerts"] });
-      setEditingId(null);
     },
   });
 
@@ -92,6 +92,16 @@ export default function AlertsPanel() {
     setAlertDuration(5);
     setAlertColor("#8b5cf6");
     setAlertAnimation("fadeIn");
+  }
+
+  if (editingAlert) {
+    const freshAlert = alerts.find((a) => a.id === editingAlert.id) || editingAlert;
+    return (
+      <AlertEditor
+        alert={freshAlert}
+        onBack={() => setEditingAlert(null)}
+      />
+    );
   }
 
   if (isLoading) {
@@ -241,7 +251,8 @@ export default function AlertsPanel() {
             return (
               <div
                 key={alert.id}
-                className="group flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 hover:bg-white/[0.07] transition"
+                className="group flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 hover:bg-white/[0.07] transition cursor-pointer"
+                onClick={() => setEditingAlert(alert)}
                 data-testid={`card-alert-${alert.id}`}
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -259,7 +270,16 @@ export default function AlertsPanel() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 ml-3">
+                <div className="flex items-center gap-2 ml-3" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-white/40 opacity-0 group-hover:opacity-100"
+                    onClick={(e) => { e.stopPropagation(); setEditingAlert(alert); }}
+                    data-testid={`button-edit-alert-${alert.id}`}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
                   <Switch
                     checked={alert.enabled}
                     onCheckedChange={(enabled) =>
@@ -271,7 +291,7 @@ export default function AlertsPanel() {
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0 text-red-400 opacity-0 group-hover:opacity-100"
-                    onClick={() => deleteMutation.mutate(alert.id)}
+                    onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(alert.id); }}
                     data-testid={`button-delete-alert-${alert.id}`}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
