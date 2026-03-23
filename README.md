@@ -8,7 +8,7 @@
 
 | Login | Dashboard |
 |-------|-----------|
-| ![Login](./streamkit/login.png) | ![Dashboard](./streamkit/dashboard.png) |
+| ![Login](./login.png) | ![Dashboard](./dashboard.png) |
 
 ---
 
