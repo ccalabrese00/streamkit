@@ -107,8 +107,7 @@ streamkit/
 │   ├── routes/              # API route definitions
 │   ├── controllers/         # Route handler logic
 │   ├── middleware/          # Auth and error middleware
-│   └── index.js
-├── screenshots/             # App screenshots for README
+│   └── index.js            
 ├── .env.example
 ├── .gitignore
 └── README.md
